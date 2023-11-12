@@ -1,5 +1,303 @@
 import type dat from "../types/dat.gui";
 
+/* Point
+ *
+ * Utility class for 2D points
+ */
+export class Point {
+  x: number;
+  y: number;
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+  static zero() {
+    return new Point(0, 0);
+  }
+  static from(x: number, y: number) {
+    return new Point(x, y);
+  }
+  static fromLength(len: number) {
+    return new Point(len, 0);
+  }
+  set(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+    return this;
+  }
+  setFrom(point: Point) {
+    this.x = point.x;
+    this.y = point.y;
+    return this;
+  }
+  setTo(point: Point) {
+    point.x = this.x;
+    point.y = this.y;
+    return this;
+  }
+  clone() {
+    return new Point(this.x, this.y);
+  }
+  distanceFrom(point: Point) {
+    const dx = this.x - point.x;
+    const dy = this.y - point.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  add(x: number, y: number) {
+    this.x += x;
+    this.y += y;
+    return this;
+  }
+  addPoint(point: Point) {
+    this.x += point.x;
+    this.y += point.y;
+    return this;
+  }
+  subtract(x: number, y: number) {
+    this.x -= x;
+    this.y -= y;
+    return this;
+  }
+  subtractPoint(point: Point) {
+    this.x -= point.x;
+    this.y -= point.y;
+    return this;
+  }
+  scale(s: number) {
+    this.x *= s;
+    this.y *= s;
+    return this;
+  }
+  scaleBy(x: number, y: number) {
+    this.x *= x;
+    this.y *= y;
+    return this;
+  }
+  scaleByPoint(point: Point) {
+    this.x *= point.x;
+    this.y *= point.y;
+    return this;
+  }
+  clamp(min: Point, max: Point) {
+    this.x = Math.min(Math.max(this.x, min.x), max.x);
+    this.y = Math.min(Math.max(this.y, min.y), max.y);
+    return this;
+  }
+  round() {
+    this.x = Math.round(this.x);
+    this.y = Math.round(this.y);
+    return this;
+  }
+  len() {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+  normalize() {
+    const len = this.len();
+    this.x /= len;
+    this.y /= len;
+    return this;
+  }
+  rotate(angle: number) {
+    const len = this.len();
+    this.x += len * Math.cos(angle);
+    this.y += len * Math.sin(angle);
+    return this;
+  }
+  equationWithSlope(slope: number) {
+    // y - y1 = m(x - x1)
+    // y - y1 = m.x - m.x1
+    // -m.x + y + m.x1 - y1 = 0
+    // (m).x + (-1).y + (y1 - m.x1) = 0
+    // => a = m, b = -1, c = y1 - m.x1
+    if (slope === Infinity) {
+      return new Equation(1, 0, -this.x);
+    }
+    return new Equation(slope, -1, this.y - slope * this.x);
+  }
+  perpendicularLineTo(line: Line) {
+    const endpointOnLine = this.perpendicularIntersectionOn(line);
+    if (endpointOnLine === null) {
+      return null;
+    }
+    return new Line(this.clone(), endpointOnLine);
+  }
+  perpendicularIntersectionOn(line: Line) {
+    const slope = line.perpendicularSlope();
+    const eqn = this.equationWithSlope(slope);
+    return line.equation().intersectionWith(eqn);
+  }
+}
+
+/* Line
+ *
+ * Utility class for 2D lines
+ */
+export class Line {
+  from: Point;
+  to: Point;
+  constructor(from: Point, to: Point) {
+    this.from = from;
+    this.to = to;
+  }
+  static between(from: Point, to: Point) {
+    return new Line(from.clone(), to.clone());
+  }
+  midpoint() {
+    return new Point(
+      (this.from.x + this.to.x) / 2,
+      (this.from.y + this.to.y) / 2
+    );
+  }
+  len() {
+    return this.from.distanceFrom(this.to);
+  }
+  angle() {
+    return Math.atan2(this.to.y - this.from.y, this.to.x - this.from.x);
+  }
+  clone() {
+    return new Line(this.from.clone(), this.to.clone());
+  }
+  set(from: Point, to: Point) {
+    this.from = from;
+    this.to = to;
+  }
+  add(x: number, y: number) {
+    this.from.add(x, y);
+    this.to.add(x, y);
+    return this;
+  }
+  subtract(x: number, y: number) {
+    this.from.subtract(x, y);
+    this.to.subtract(x, y);
+    return this;
+  }
+  addPoint(point: Point) {
+    this.add(point.x, point.y);
+    return this;
+  }
+  scale(s: number) {
+    this.from.scale(s);
+    this.to.scale(s);
+    return this;
+  }
+  vector() {
+    return new Point(this.to.x - this.from.x, this.to.y - this.from.y);
+  }
+  slope() {
+    if (this.to.x === this.from.x) {
+      return Infinity;
+    }
+    return (this.to.y - this.from.y) / (this.to.x - this.from.x);
+  }
+  perpendicularSlope() {
+    const slope = this.slope();
+    if (slope === 0) {
+      return Infinity;
+    }
+    if (slope === Infinity) {
+      return 0;
+    }
+    return -1 / slope;
+  }
+  yIntercept() {
+    return this.from.y - this.slope() * this.from.x;
+  }
+  equation() {
+    // a.x1 + b.y1 + c = 0
+    // a.x2 + b.y2 + c = 0
+    // determinant = x2.y1 - x1.y2
+    // y2.eqn1 - y1.eqn2: a/c = (y2 - y1) / determinant
+    // x1.eqn2 - x2.eqn1: b/c = (x1 - x2) / determinant
+    //  a = (y2 - y1) / determinant
+    //  b = (x1 - x2) / determinant
+    //  c = 1
+    const determinant = this.to.x * this.from.y - this.from.x * this.to.y;
+    if (determinant === 0) {
+      // line is passing through the origin
+      return new Equation(this.to.y - this.from.y, this.from.x - this.to.x, 0);
+    }
+    return new Equation(
+      (this.to.y - this.from.y) / determinant,
+      (this.from.x - this.to.x) / determinant,
+      1
+    );
+  }
+  intersectionWith(line: Line) {
+    const eqn1 = this.equation();
+    const eqn2 = line.equation();
+    return eqn1.intersectionWith(eqn2);
+  }
+}
+
+/** Equation
+ *
+ * Utility class for 2D line equations
+ * ax + by + c = 0
+ */
+export class Equation {
+  a: number;
+  b: number;
+  c: number;
+  constructor(a: number, b: number, c: number) {
+    this.a = a;
+    this.b = b;
+    this.c = c;
+  }
+  intersectionWith(eqn: Equation) {
+    // a1*x + b1*y + c1 = 0
+    // a2*x + b2*y + c2 = 0
+    // determinant = a2 * b1 - a1 * b2;
+    // (b2.eqn1 - b1.eqn2): x = (c1 * b2 - c2 * b1) / determinant
+    // (a1.eqn2 - a2.eqn1): y = (a1 * c2 - a2 * c1) / determinant;
+    const determinant = eqn.a * this.b - this.a * eqn.b;
+    if (determinant === 0) {
+      return null;
+    }
+    const x = (this.c * eqn.b - eqn.c * this.b) / determinant;
+    const y = (this.a * eqn.c - eqn.a * this.c) / determinant;
+    return new Point(x, y);
+  }
+}
+
+export class Rect {
+  bottomLeft: Point;
+  topRight: Point;
+  constructor(bottomLeft: Point, topRight: Point) {
+    this.bottomLeft = bottomLeft;
+    this.topRight = topRight;
+  }
+  static from(bottomLeft: Point, topRight: Point) {
+    return new Rect(bottomLeft, topRight);
+  }
+  static zero() {
+    return new Rect(Point.zero(), Point.zero());
+  }
+  get width() {
+    return this.topRight.x - this.bottomLeft.x;
+  }
+  get height() {
+    return this.topRight.y - this.bottomLeft.y;
+  }
+  get center() {
+    return new Point(
+      (this.bottomLeft.x + this.topRight.x) / 2,
+      (this.bottomLeft.y + this.topRight.y) / 2
+    );
+  }
+  get bottom() {
+    return this.bottomLeft.y;
+  }
+  get top() {
+    return this.topRight.y;
+  }
+  get left() {
+    return this.bottomLeft.x;
+  }
+  get right() {
+    return this.topRight.x;
+  }
+}
+
 /* app
  *
  * Main application object
@@ -21,8 +319,12 @@ export class App {
   settings = new Settings(this.debug);
 
   palette = new PaletteFeature(this, "palette");
+  input = new InputFeature(this, "input");
   reloadOnChange = new ReloadOnChangeFeature(this, "reloadOnChange");
   animate = new AnimateFeature(this, "animate");
+  canvas = new CanvasFeature(this, "canvas");
+  drawDebug = new DrawDebugFeature(this, "drawDebug");
+  grid = new GridFeature(this, "grid");
 
   constructor() {
     // requires app.settings.gui to have been initialized
@@ -296,6 +598,125 @@ class PaletteFeature extends Feature {
   }
 }
 
+type InputPosition = {
+  clientX: number;
+  clientY: number;
+};
+type InputOriginalEvent = {
+  preventDefault: () => void;
+};
+
+type InputKey = {
+  altKey: boolean;
+  code: string;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+} | null;
+
+type InputPointer = Point | null;
+
+/* input
+ *
+ * Mouse/pointer/touch and keyboard input
+ * Use app.input.keyDown to get the key pressed in the last frame,
+ * and app.input.{pointerDown, pointer, pointerUp} to get the pointer
+ * interaction position in canvas coordinates
+ *
+ * this.pointer is the pointer position in canvas coordinates
+ * this.pointerScreen is the pointer position in screen coordinates
+ * they must be updated with changes to .x and .y, not reset to null or assigned a new Point
+ * this is because pointerDown, pointerMove, and pointerUp are references to this.pointer
+ */
+class InputFeature extends Feature {
+  private _keyDown: InputKey = null;
+  private _pointerDown: InputPointer = null;
+  private _pointerMove: InputPointer = null;
+  private _pointerUp: InputPointer = null;
+  private pointerScreen = Point.zero();
+
+  pointer = Point.zero();
+  dragStart: Point | null = null;
+  dragDelta = Point.zero();
+
+  get keyDown() {
+    return this._keyDown;
+  }
+  get pointerDown() {
+    return this._pointerDown;
+  }
+  get pointerMove() {
+    return this._pointerMove;
+  }
+  get pointerUp() {
+    return this._pointerUp;
+  }
+
+  // Save the keydown event as it happens,
+  // for use by other features' update functions
+  constructor(app: App, name: string) {
+    super(app, name);
+    self.addEventListener("keydown", (e) => {
+      const { altKey, code, ctrlKey, metaKey, shiftKey } = e;
+      this._keyDown = { altKey, code, ctrlKey, metaKey, shiftKey };
+      if (!altKey && !ctrlKey && !metaKey && !shiftKey) {
+        e.preventDefault();
+      }
+    });
+    self.addEventListener("mousedown", (e) => this.onPointerDown(e, e));
+    self.addEventListener("touchstart", (e) =>
+      this.onPointerDown(e.touches[0]!, e)
+    );
+    self.addEventListener("mousemove", (e) => this.onPointerMove(e, e));
+    self.addEventListener("touchmove", (e) =>
+      this.onPointerMove(e.touches[0]!, e)
+    );
+    self.addEventListener("mouseup", (e) => this.onPointerUp(e));
+    self.addEventListener("touchend", (e) => this.onPointerUp(e));
+  }
+
+  override update() {
+    const { canvas } = this.app;
+    if (this._pointerDown || this._pointerMove || this._pointerUp) {
+      // Convert the pointer position from screen coordinates to canvas coordinates
+      canvas.setCanvasPointerFromScreenCoords(this.pointer, this.pointerScreen);
+    }
+  }
+
+  // Reset the variables, except .pointer, at the end of each frame
+  override reset() {
+    this._keyDown = null;
+    this._pointerDown = null;
+    this._pointerMove = null;
+    this._pointerUp = null;
+  }
+
+  onPointerDown(pos: InputPosition, originalEvent: InputOriginalEvent) {
+    originalEvent.preventDefault();
+    this.pointerScreen.set(pos.clientX, pos.clientY);
+    this._pointerDown = this.pointer;
+    if (!this.dragStart) {
+      this.dragStart = this.pointer.clone();
+    }
+  }
+
+  onPointerMove(pos: InputPosition, originalEvent: InputOriginalEvent) {
+    originalEvent.preventDefault();
+    this.pointerScreen.set(pos.clientX, pos.clientY);
+    this._pointerMove = this.pointer;
+    if (this.dragStart) {
+      this.dragDelta.setFrom(this.pointer).subtractPoint(this.dragStart);
+    }
+  }
+
+  onPointerUp(originalEvent: InputOriginalEvent) {
+    originalEvent.preventDefault();
+    this._pointerUp = this.pointer;
+    this.dragStart = null;
+    this.dragDelta.set(0, 0);
+  }
+}
+
 /* reloadOnChange
  *
  * Reload the page when server detects a change in the source code, only in dev mode
@@ -499,5 +920,446 @@ export class AnimateFeature extends Feature {
     delete obj[property];
     obj[property] = valueToSet;
     this.animations.splice(animationIndex, 1);
+  }
+}
+
+type TriangleVertices = [Point, Point, Point];
+
+interface CanvasCircleOpts {
+  radius: number;
+  color: PaletteColor;
+}
+
+interface CanvasPointsOpts {
+  radius: number;
+  color: PaletteColor;
+}
+
+interface CanvasTextOpts {
+  size: number;
+  font: string;
+  color: PaletteColor;
+  align: CanvasTextAlign;
+  baseline: CanvasTextBaseline;
+}
+
+interface CanvasLineOpts {
+  lineWidth: number;
+  color: PaletteColor;
+  arrowSize: number;
+  arrowStart: boolean;
+  arrowEnd: boolean;
+  arrowColor: PaletteColor;
+}
+
+interface CanvasRingOpts {
+  color: PaletteColor;
+  lineWidth: number;
+  arcStart: number;
+  arcEnd: number;
+}
+
+interface CanvasTriangleOpts {
+  color: PaletteColor;
+  lineWidth: number;
+}
+
+interface CanvasGridOpts {
+  lineWidth: number;
+}
+
+/* canvas
+ *
+ * Manage the canvas element where the game is rendered
+ */
+class CanvasFeature extends Feature {
+  el = document.getElementById("canvas-el")! as HTMLCanvasElement;
+  ctx = this.el.getContext("2d")!;
+  width = 0;
+  height = 0;
+  scale = 1;
+  toResizeNextFrame = true; // features dependent on canvas should resize on first frame
+  unitScale = 10;
+  defaultScale = 6;
+  scaleCancelRatio = 1;
+
+  constructor(app: App, name: string) {
+    super(app, name);
+    this.settings.add(this, "width").listen();
+    this.settings.add(this, "height").listen();
+    this.settings.add(this, "scale").listen();
+    this.settings.add(this, "unitScale", 1, 100);
+    this.settings.add(this, "defaultScale", 1, 100);
+    this.settings.add(this, "scaleCancelRatio").listen();
+
+    this.setSize();
+    this.setCenteredCoordinates();
+    this.ctx.imageSmoothingEnabled = false;
+
+    self.addEventListener("resize", () => this.setSize());
+  }
+
+  override update() {
+    if (this.toResizeNextFrame) {
+      this.el.width = this.width;
+      this.el.height = this.height;
+      this.toResizeNextFrame = false;
+    }
+    this.clear();
+    this.scaleCancelRatio =
+      (window.devicePixelRatio * this.defaultScale) / this.scale;
+  }
+
+  clear() {
+    const { palette } = this.app;
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.ctx.fillStyle = palette.colors.background;
+    this.ctx.fillRect(0, 0, this.width, this.height);
+    this.setInvertedYDirection();
+  }
+
+  setCenteredCoordinates() {
+    this.setInvertedYDirection();
+    const fillText = this.ctx.fillText;
+    this.ctx.fillText = (text: string, x: number, y: number) => {
+      this.resetYDirection();
+      fillText.call(this.ctx, text, x, -y);
+      this.setInvertedYDirection();
+    };
+  }
+
+  setSize() {
+    // important to set the width and height of the canvas element itself
+    // (this.el.width and this.el.height)
+    // otherwise the canvas will remain 300x150 pixels and rescaled by CSS
+    // (blurry)
+    // For retina displays, the canvas is scaled up by the devicePixelRatio for
+    // perfect sharpness
+    this.width = this.el.clientWidth * window.devicePixelRatio;
+    this.height = this.el.clientHeight * window.devicePixelRatio;
+    this.toResizeNextFrame = true;
+  }
+
+  // TODO: describe what scale means here
+  setScale(scale: number) {
+    this.scale = scale / this.unitScale;
+    this.setInvertedYDirection();
+  }
+
+  setInvertedYDirection() {
+    this.ctx.setTransform(
+      this.scale,
+      0,
+      0,
+      -this.scale,
+      this.width / 2,
+      this.height / 2
+    );
+  }
+
+  resetYDirection() {
+    this.ctx.setTransform(
+      this.scale,
+      0,
+      0,
+      this.scale,
+      this.width / 2,
+      this.height / 2
+    );
+  }
+
+  setCanvasPointerFromScreenCoords(point: Point, screenPoint: Point) {
+    const rect = this.el.getBoundingClientRect();
+    const dpr = window.devicePixelRatio;
+    const scale = this.scale * this.unitScale;
+    point.set(
+      (dpr * (screenPoint.x - rect.left - this.width / dpr / 2)) / scale,
+      (dpr * -(screenPoint.y - rect.top - this.height / dpr / 2)) / scale
+    );
+  }
+
+  // consider the device to be in portrait mode if the aspect ratio is less than 1.2
+  isPortrait() {
+    return this.width / this.height < 1.2;
+  }
+
+  // this.scaleCancelRatio is used to cancel the scale factor of buttons and
+  // interactive elements drawn bigger beyond so they're visible when grid is
+  // large on a small screen
+  distance(a: Point, b: Point) {
+    return a.distanceFrom(b) / this.scaleCancelRatio;
+  }
+
+  // Draw methods
+  drawCircle(
+    pos: Point,
+    { radius = 1, color = "black" }: Partial<CanvasCircleOpts> = {}
+  ) {
+    const { palette } = this.app;
+    this.ctx.beginPath();
+    this.ctx.arc(
+      pos.x * this.unitScale,
+      pos.y * this.unitScale,
+      radius * this.unitScale * this.scaleCancelRatio,
+      0,
+      2 * Math.PI
+    );
+    this.ctx.fillStyle = palette.colors[color];
+    this.ctx.fill();
+  }
+
+  drawPoints(
+    points: Point[],
+    { radius = 1, color = "black" }: Partial<CanvasPointsOpts> = {}
+  ) {
+    const { palette } = this.app;
+    this.ctx.beginPath();
+    points.forEach((point: Point) => {
+      const x = point.x * this.unitScale;
+      const y = point.y * this.unitScale;
+      this.ctx.moveTo(x, y);
+      this.ctx.arc(
+        x,
+        y,
+        radius * this.unitScale * this.scaleCancelRatio,
+        0,
+        2 * Math.PI
+      );
+    });
+    this.ctx.fillStyle = palette.colors[color];
+    this.ctx.fill();
+  }
+
+  drawText(
+    pos: Point,
+    text: string,
+    {
+      size = 0.5,
+      font = "sans-serif",
+      color = "black",
+      align = "center",
+      baseline = "alphabetic", // top, hanging, middle. ideographic, bottom
+    }: Partial<CanvasTextOpts> = {}
+  ) {
+    const { palette } = this.app;
+    this.ctx.textAlign = align;
+    this.ctx.textBaseline = baseline;
+    const fontSize = size * this.unitScale * this.scaleCancelRatio;
+    this.ctx.font = `${fontSize}px ${font}`;
+    this.ctx.fillStyle = palette.colors[color];
+    this.ctx.fillText(text, pos.x * this.unitScale, pos.y * this.unitScale);
+  }
+
+  drawLine(
+    line: Line,
+    {
+      lineWidth = 1,
+      color = "black",
+      arrowSize = 0.15,
+      arrowStart = false,
+      arrowEnd = false,
+      arrowColor = color,
+    }: Partial<CanvasLineOpts> = {}
+  ) {
+    const { palette } = this.app;
+    this.ctx.beginPath();
+    const arrowWidth = arrowSize * this.unitScale * this.scaleCancelRatio;
+    const l = line.clone().scale(this.unitScale);
+    const angle = l.angle();
+    this.ctx.lineWidth = lineWidth * this.unitScale * this.scaleCancelRatio;
+    this.ctx.moveTo(l.from.x, l.from.y);
+    this.ctx.lineTo(l.to.x, l.to.y);
+    this.ctx.strokeStyle = palette.colors[color];
+    if (arrowColor !== color) {
+      this.ctx.stroke();
+      this.ctx.beginPath();
+    }
+    if (arrowStart) {
+      this.ctx.moveTo(l.from.x, l.from.y);
+      this.ctx.lineTo(
+        l.from.x + arrowWidth * Math.cos(angle + Math.PI / 4),
+        l.from.y + arrowWidth * Math.sin(angle + Math.PI / 4)
+      );
+      this.ctx.moveTo(l.from.x, l.from.y);
+      this.ctx.lineTo(
+        l.from.x + arrowWidth * Math.cos(angle - Math.PI / 4),
+        l.from.y + arrowWidth * Math.sin(angle - Math.PI / 4)
+      );
+    }
+    if (arrowEnd) {
+      this.ctx.moveTo(l.to.x, l.to.y);
+      this.ctx.lineTo(
+        l.to.x + arrowWidth * Math.cos(angle + (Math.PI * 3) / 4),
+        l.to.y + arrowWidth * Math.sin(angle + (Math.PI * 3) / 4)
+      );
+      this.ctx.moveTo(l.to.x, l.to.y);
+      this.ctx.lineTo(
+        l.to.x + arrowWidth * Math.cos(angle - (Math.PI * 3) / 4),
+        l.to.y + arrowWidth * Math.sin(angle - (Math.PI * 3) / 4)
+      );
+    }
+    this.ctx.strokeStyle = palette.colors[arrowColor];
+    this.ctx.stroke();
+  }
+
+  drawRing(
+    pos: Point,
+    radius: number,
+    {
+      color = "black",
+      lineWidth = 0.1,
+      arcStart = 0,
+      arcEnd = 2 * Math.PI,
+    }: Partial<CanvasRingOpts> = {}
+  ) {
+    const { palette } = this.app;
+    this.ctx.beginPath();
+    this.ctx.lineWidth = lineWidth * this.unitScale * this.scaleCancelRatio;
+    this.ctx.arc(
+      pos.x * this.unitScale,
+      pos.y * this.unitScale,
+      radius * this.unitScale * this.scaleCancelRatio,
+      arcStart,
+      arcEnd
+    );
+    this.ctx.strokeStyle = palette.colors[color];
+    this.ctx.stroke();
+  }
+
+  drawTriangle(
+    vertices: TriangleVertices,
+    { color = "black", lineWidth = 0.1 }: Partial<CanvasTriangleOpts> = {}
+  ) {
+    const { palette } = this.app;
+    this.ctx.beginPath();
+    this.ctx.moveTo(
+      vertices[0].x * this.unitScale,
+      vertices[0].y * this.unitScale
+    );
+    this.ctx.lineTo(
+      vertices[1].x * this.unitScale,
+      vertices[1].y * this.unitScale
+    );
+    this.ctx.lineTo(
+      vertices[2].x * this.unitScale,
+      vertices[2].y * this.unitScale
+    );
+    this.ctx.closePath();
+    this.ctx.lineWidth = lineWidth * this.unitScale * this.scaleCancelRatio;
+    this.ctx.strokeStyle = palette.colors[color];
+    this.ctx.stroke();
+  }
+
+  drawGrid(
+    cellSize: number,
+    cells: Point,
+    { lineWidth = 0.02 }: Partial<CanvasGridOpts> = {}
+  ) {
+    const { palette } = this.app;
+    this.ctx.strokeStyle = palette.colors.divider;
+    this.ctx.lineWidth = lineWidth * this.unitScale * this.scaleCancelRatio;
+    this.ctx.beginPath();
+    const yHeight = cells.y * cellSize;
+    for (let i = 0; i < cells.x / 2 + 1; i++) {
+      this.ctx.moveTo(i * this.unitScale, -yHeight / 2);
+      this.ctx.lineTo(i * this.unitScale, yHeight / 2);
+      if (i !== 0) {
+        this.ctx.moveTo(-i * this.unitScale, -yHeight / 2);
+        this.ctx.lineTo(-i * this.unitScale, yHeight / 2);
+      }
+    }
+    const xWidth = cells.x * cellSize;
+    for (let i = 0; i < cells.y / 2 + 1; i++) {
+      this.ctx.moveTo(-xWidth / 2, i * this.unitScale);
+      this.ctx.lineTo(xWidth / 2, i * this.unitScale);
+      if (i !== 0) {
+        this.ctx.moveTo(-xWidth / 2, -i * this.unitScale);
+        this.ctx.lineTo(xWidth / 2, -i * this.unitScale);
+      }
+    }
+    this.ctx.stroke();
+  }
+}
+
+/* drawDebug
+ *
+ * Draw debug information on the canvas
+ */
+class DrawDebugFeature extends Feature {
+  dotRadius = 0.07;
+  labelOffset = new Point(0.2, 0.2);
+  labelFontSize = 0.3;
+  labelFontFamily = "sans-serif";
+
+  init() {
+    this.settings.add(this, "dotRadius", 0, 1);
+    this.settings.add(this.labelOffset, "x", -1, 1).name("labelOffset.x");
+    this.settings.add(this.labelOffset, "y", -1, 1).name("labelOffset.y");
+    this.settings.add(this, "labelFontSize");
+  }
+
+  point(position: Point, label: string, color: PaletteColor = "error") {
+    const { canvas } = this.app;
+    canvas.drawCircle(position, { radius: this.dotRadius, color });
+
+    const labelPos = this.labelOffset
+      .clone()
+      .scale(canvas.scaleCancelRatio)
+      .addPoint(position);
+    canvas.drawText(labelPos, label, {
+      size: this.labelFontSize,
+      font: this.labelFontFamily,
+      color: color,
+      align: "left",
+    });
+  }
+}
+
+/* grid
+ *
+ * Show a grid of lines as a coordinate system
+ */
+class GridFeature extends Feature {
+  minCells = Point.from(14, 18);
+  cells = Point.zero();
+  cellSize = 0;
+  bounds = Rect.zero();
+  lineWidth = 0.02;
+  boundsBottomMargin = 0.2;
+
+  constructor(app: App, name: string) {
+    super(app, name);
+    this.settings.add(this, "lineWidth", 0, 0.5);
+  }
+
+  override update() {
+    this.setCanvasScale();
+    this.setBounds();
+  }
+
+  drawGrid(canvas: CanvasFeature) {
+    canvas.drawGrid(this.cellSize, this.cells, {
+      lineWidth: this.lineWidth,
+    });
+  }
+
+  setCanvasScale() {
+    const { canvas } = this.app;
+    const { width, height } = canvas;
+    const cellSizeX = width / this.minCells.x;
+    const cellSizeY = height / this.minCells.y;
+    this.cellSize = Math.min(cellSizeX, cellSizeY);
+    this.cells.set(width, height).scale(1 / this.cellSize);
+    canvas.setScale(this.cellSize);
+  }
+
+  setBounds() {
+    this.bounds.bottomLeft.setFrom(
+      this.cells
+        .clone()
+        .scale(-1 / 2)
+        .scaleBy(1, 1 - this.boundsBottomMargin)
+    );
+    this.bounds.topRight.setFrom(this.cells.clone().scale(1 / 2));
   }
 }

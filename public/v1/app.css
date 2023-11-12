@@ -69,3 +69,16 @@ body {
   opacity: 0;
   transition: opacity 0.2s ease-out;
 }
+
+/* app.canvas */
+#canvas-el {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  min-height: 20px;
+  z-index: 0;
+  margin: 0;
+  padding: 0;
+}
