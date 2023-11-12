@@ -1,5 +1,6 @@
 import {
   Application,
+  Context,
   Router,
   ServerSentEventTarget,
 } from "https://deno.land/x/oak@v12.6.0/mod.ts";
@@ -8,6 +9,17 @@ import { debounce } from "https://deno.land/std@0.197.0/async/debounce.ts";
 
 const app = new Application();
 const router = new Router();
+
+// Middleware for adding CORS headers
+app.use(async (ctx: Context, next: () => Promise<void>) => {
+  await next();
+  ctx.response.headers.set("Access-Control-Allow-Origin", "*");
+  ctx.response.headers.set(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE"
+  );
+  ctx.response.headers.set("Access-Control-Allow-Headers", "Content-Type");
+});
 
 // Static files from public/
 app.use(staticFiles("public", { cacheControl: false }));

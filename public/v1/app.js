@@ -1,4 +1,3 @@
-import dat from "../types/dat.gui";
 /* app
  *
  * Main application object
@@ -8,7 +7,7 @@ import dat from "../types/dat.gui";
  *
  * Call app.init() to start the application (see the end of this file)
  */
-class App {
+export class App {
     constructor() {
         this.paused = false;
         this.frame = 0;
@@ -50,7 +49,7 @@ class App {
         updateLoop(0);
     }
 }
-class Feature {
+export class Feature {
     constructor(app, name) {
         this.app = app;
         this.name = name;
@@ -169,7 +168,7 @@ class Settings {
         })();
         if (!debug.enabled)
             return;
-        this.gui = new dat.GUI();
+        this.gui = new window.dat.GUI();
         this.gui.useLocalStorage = true;
         this.gui.closed = true;
     }

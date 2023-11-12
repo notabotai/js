@@ -1,4 +1,4 @@
-import dat from "../types/dat.gui";
+import type dat from "../types/dat.gui";
 
 /* app
  *
@@ -9,7 +9,7 @@ import dat from "../types/dat.gui";
  *
  * Call app.init() to start the application (see the end of this file)
  */
-class App {
+export class App {
   paused = false;
   frame = 0;
   browserTime = 0;
@@ -57,7 +57,7 @@ class App {
   }
 }
 
-abstract class Feature {
+export abstract class Feature {
   name: string;
   app: App;
   debug: DebugLogger;
@@ -216,7 +216,7 @@ class Settings {
 
   constructor(debug: Debug) {
     if (!debug.enabled) return;
-    this.gui = new dat.GUI();
+    this.gui = new window.dat.GUI();
     this.gui.useLocalStorage = true;
     this.gui.closed = true;
   }
