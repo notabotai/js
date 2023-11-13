@@ -11,6 +11,9 @@ export class Point {
     this.x = x;
     this.y = y;
   }
+  toString() {
+    return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)})`;
+  }
   static zero() {
     return new Point(0, 0);
   }
@@ -262,12 +265,14 @@ export class Equation {
 export class Rect {
   bottomLeft: Point;
   topRight: Point;
-  constructor(bottomLeft: Point, topRight: Point) {
+  parent: Rect | null = null;
+  constructor(bottomLeft: Point, topRight: Point, parent = null) {
     this.bottomLeft = bottomLeft;
     this.topRight = topRight;
+    this.parent = parent;
   }
-  static from(bottomLeft: Point, topRight: Point) {
-    return new Rect(bottomLeft, topRight);
+  static from(bottomLeft: Point, topRight: Point, parent = null) {
+    return new Rect(bottomLeft, topRight, parent);
   }
   static zero() {
     return new Rect(Point.zero(), Point.zero());
@@ -295,6 +300,12 @@ export class Rect {
   }
   get right() {
     return this.topRight.x;
+  }
+  get aspectRatio() {
+    return this.width / this.height;
+  }
+  get size() {
+    return new Point(this.width, this.height);
   }
 }
 
@@ -460,6 +471,9 @@ class Debug {
     if (typeof value === "number") {
       return value.toFixed(2);
     }
+    if (value instanceof Point) {
+      return value.toString();
+    }
     const customStringifierResult = stringifier(value);
     if (customStringifierResult !== undefined) {
       return customStringifierResult;
@@ -517,7 +531,7 @@ class Settings {
   })();
 
   constructor(debug: Debug) {
-    if (!debug.enabled) return;
+    if (!debug.enabled || !window.dat) return;
     this.gui = new window.dat.GUI();
     this.gui.useLocalStorage = true;
     this.gui.closed = true;
@@ -952,6 +966,11 @@ interface CanvasLineOpts {
   arrowColor: PaletteColor;
 }
 
+interface CanvasRectOpts extends CanvasLineOpts {
+  fill: boolean;
+  fillColor: PaletteColor;
+}
+
 interface CanvasRingOpts {
   color: PaletteColor;
   lineWidth: number;
@@ -973,18 +992,27 @@ interface CanvasGridOpts {
  * Manage the canvas element where the game is rendered
  */
 class CanvasFeature extends Feature {
-  el = document.getElementById("canvas-el")! as HTMLCanvasElement;
-  ctx = this.el.getContext("2d")!;
+  el: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
   width = 0;
   height = 0;
   scale = 1;
   toResizeNextFrame = true; // features dependent on canvas should resize on first frame
-  unitScale = 10;
-  defaultScale = 6;
+  unitScale = 50;
+  defaultScale = 5;
   scaleCancelRatio = 1;
 
   constructor(app: App, name: string) {
     super(app, name);
+    this.el =
+      document.querySelector<HTMLCanvasElement>("#canvas-el") ||
+      document.createElement("canvas");
+    if (this.el.parentElement === null) {
+      this.el.id = "canvas-el";
+      document.body.appendChild(this.el);
+    }
+    this.ctx = this.el.getContext("2d")!;
+
     this.settings.add(this, "width").listen();
     this.settings.add(this, "height").listen();
     this.settings.add(this, "scale").listen();
@@ -1202,6 +1230,32 @@ class CanvasFeature extends Feature {
     this.ctx.stroke();
   }
 
+  drawRect(
+    rect: Rect,
+    {
+      color = "black",
+      lineWidth = 0.1,
+      fill = false,
+      fillColor = color,
+    }: Partial<CanvasRectOpts> = {}
+  ) {
+    const { palette } = this.app;
+    this.ctx.beginPath();
+    this.ctx.lineWidth = lineWidth * this.unitScale * this.scaleCancelRatio;
+    this.ctx.rect(
+      rect.bottomLeft.x * this.unitScale,
+      rect.bottomLeft.y * this.unitScale, // y of the point above bottom left
+      rect.width * this.unitScale,
+      rect.height * this.unitScale
+    );
+    this.ctx.strokeStyle = palette.colors[color];
+    this.ctx.stroke();
+    if (fill) {
+      this.ctx.fillStyle = palette.colors[fillColor];
+      this.ctx.fill();
+    }
+  }
+
   drawRing(
     pos: Point,
     radius: number,
@@ -1250,31 +1304,27 @@ class CanvasFeature extends Feature {
     this.ctx.stroke();
   }
 
-  drawGrid(
-    cellSize: number,
-    cells: Point,
-    { lineWidth = 0.02 }: Partial<CanvasGridOpts> = {}
-  ) {
+  drawGrid(cells: Point, { lineWidth = 0.02 }: Partial<CanvasGridOpts> = {}) {
     const { palette } = this.app;
     this.ctx.strokeStyle = palette.colors.divider;
     this.ctx.lineWidth = lineWidth * this.unitScale * this.scaleCancelRatio;
     this.ctx.beginPath();
-    const yHeight = cells.y * cellSize;
+    const yEdge = this.height / 2 / this.scale;
     for (let i = 0; i < cells.x / 2 + 1; i++) {
-      this.ctx.moveTo(i * this.unitScale, -yHeight / 2);
-      this.ctx.lineTo(i * this.unitScale, yHeight / 2);
+      this.ctx.moveTo(i * this.unitScale, -yEdge);
+      this.ctx.lineTo(i * this.unitScale, yEdge);
       if (i !== 0) {
-        this.ctx.moveTo(-i * this.unitScale, -yHeight / 2);
-        this.ctx.lineTo(-i * this.unitScale, yHeight / 2);
+        this.ctx.moveTo(-i * this.unitScale, -yEdge);
+        this.ctx.lineTo(-i * this.unitScale, yEdge);
       }
     }
-    const xWidth = cells.x * cellSize;
+    const xEdge = this.width / 2 / this.scale;
     for (let i = 0; i < cells.y / 2 + 1; i++) {
-      this.ctx.moveTo(-xWidth / 2, i * this.unitScale);
-      this.ctx.lineTo(xWidth / 2, i * this.unitScale);
+      this.ctx.moveTo(-xEdge, i * this.unitScale);
+      this.ctx.lineTo(xEdge, i * this.unitScale);
       if (i !== 0) {
-        this.ctx.moveTo(-xWidth / 2, -i * this.unitScale);
-        this.ctx.lineTo(xWidth / 2, -i * this.unitScale);
+        this.ctx.moveTo(-xEdge, -i * this.unitScale);
+        this.ctx.lineTo(xEdge, -i * this.unitScale);
       }
     }
     this.ctx.stroke();
@@ -1320,11 +1370,11 @@ class DrawDebugFeature extends Feature {
  * Show a grid of lines as a coordinate system
  */
 class GridFeature extends Feature {
-  minCells = Point.from(14, 18);
+  minCells = Point.from(16, 10);
   cells = Point.zero();
   cellSize = 0;
   bounds = Rect.zero();
-  lineWidth = 0.02;
+  lineWidth = 0.01;
   boundsBottomMargin = 0.2;
 
   constructor(app: App, name: string) {
@@ -1338,7 +1388,7 @@ class GridFeature extends Feature {
   }
 
   drawGrid(canvas: CanvasFeature) {
-    canvas.drawGrid(this.cellSize, this.cells, {
+    canvas.drawGrid(this.cells, {
       lineWidth: this.lineWidth,
     });
   }
