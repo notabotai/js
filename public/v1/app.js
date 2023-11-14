@@ -1,3 +1,4 @@
+Math.sum = (arr) => arr.reduce((a, b) => a + b, 0);
 /* Point
  *
  * Utility class for 2D points
@@ -19,6 +20,9 @@ export class Point {
     static fromLength(len) {
         return new Point(len, 0);
     }
+    equals(point) {
+        return this.x === point.x && this.y === point.y;
+    }
     set(x, y) {
         this.x = x;
         this.y = y;
@@ -27,11 +31,6 @@ export class Point {
     setFrom(point) {
         this.x = point.x;
         this.y = point.y;
-        return this;
-    }
-    setTo(point) {
-        point.x = this.x;
-        point.y = this.y;
         return this;
     }
     clone() {
@@ -256,6 +255,67 @@ export class Rect {
     static zero() {
         return new Rect(Point.zero(), Point.zero());
     }
+    static fromXY(x, y) {
+        return new Rect(Point.from(x, y), Point.from(x, y));
+    }
+    static fromScalar(s) {
+        return new Rect(Point.from(s, s), Point.from(s, s));
+    }
+    hStack(widths, margin = null, spacing = 0) {
+        const rects = [];
+        let { left, right, top, bottom } = this.withMargin(margin);
+        let x = left +
+            (right - left - (widths.length - 1) * spacing - Math.sum(widths)) / 2;
+        for (const width of widths) {
+            rects.push(new Rect(Point.from(x, bottom), Point.from(x + width, top), this));
+            x += width + spacing;
+        }
+        return rects;
+    }
+    hStackEqual(count, margin = null) {
+        const rects = [];
+        let { left, right, top, bottom } = this.withMargin(margin);
+        const width = (right - left) / count;
+        let x = left;
+        for (let i = 0; i < count; i++) {
+            rects.push(new Rect(Point.from(x, bottom), Point.from(x + width, top), this));
+            x += width;
+        }
+        return rects;
+    }
+    vStack(heights, margin = null, spacing = 0) {
+        const rects = [];
+        let { left, right, top, bottom } = this.withMargin(margin);
+        let y = bottom + (top - bottom - Math.sum(heights)) / 2;
+        for (const height of heights) {
+            rects.push(new Rect(Point.from(left, y), Point.from(right, y + height), this));
+            y += height + spacing;
+        }
+        return rects;
+    }
+    vStackEqual(count, margin = null) {
+        const rects = [];
+        const { left, right, top, bottom } = this.withMargin(margin);
+        const height = (top - bottom) / count;
+        let y = bottom;
+        for (let i = 0; i < count; i++) {
+            rects.push(new Rect(Point.from(left, y), Point.from(right, y + height), this));
+            y += height;
+        }
+        return rects;
+    }
+    withMargin(margin) {
+        if (!margin) {
+            return this;
+        }
+        return new Rect(this.bottomLeft.clone().addPoint(margin.bottomLeft), this.topRight.clone().subtractPoint(margin.topRight));
+    }
+    withMarginXY(x, y) {
+        return new Rect(this.bottomLeft.clone().add(x, y), this.topRight.clone().subtract(x, y));
+    }
+    withMarginAll(margin) {
+        return this.withMarginXY(margin, margin);
+    }
     get width() {
         return this.topRight.x - this.bottomLeft.x;
     }
@@ -282,6 +342,65 @@ export class Rect {
     }
     get size() {
         return new Point(this.width, this.height);
+    }
+    clone() {
+        return new Rect(this.bottomLeft.clone(), this.topRight.clone());
+    }
+    scale(s) {
+        this.bottomLeft.scale(s);
+        this.topRight.scale(s);
+        return this;
+    }
+}
+/** Table
+ *
+ * Utility class for 2D tables (grid of cells)
+ * rowCount and colCount are the number of rows and columns
+ * cells is a 1D array of all the cells
+ */
+export class Table {
+    constructor(rowCount, colCount) {
+        this.cells = Array.from(Array(rowCount * colCount));
+        this.rowCount = rowCount;
+        this.colCount = colCount;
+    }
+    get allRows() {
+        return this.cells.reduce((rows, cell, index) => {
+            var _a;
+            const row = Math.floor(index / this.rowCount);
+            rows[row] = rows[row] || [];
+            (_a = rows[row]) === null || _a === void 0 ? void 0 : _a.push(cell);
+            return rows;
+        }, []);
+    }
+    get allCols() {
+        return this.cells.reduce((cols, cell, index) => {
+            var _a;
+            const col = index % this.colCount;
+            cols[col] = cols[col] || [];
+            (_a = cols[col]) === null || _a === void 0 ? void 0 : _a.push(cell);
+            return cols;
+        }, []);
+    }
+    row(index) {
+        return this.cells.slice(index * this.rowCount, (index + 1) * this.rowCount);
+    }
+    col(index) {
+        return this.cells.filter((_, i) => i % this.colCount === index);
+    }
+    cell(row, col) {
+        return this.cells[row * this.rowCount + col];
+    }
+    indexToPos(index) {
+        return Point.from(Math.floor(index / this.rowCount), index % this.colCount);
+    }
+    posToIndex(pos) {
+        return pos.x * this.rowCount + pos.y;
+    }
+    forEachCell(fn) {
+        this.cells.forEach((cell, index) => {
+            fn(cell, this.indexToPos(index));
+        });
     }
 }
 /* app
@@ -484,9 +603,11 @@ class PaletteFeature extends Feature {
                 primary: "#F3AA60",
                 primaryDark: "#F97B22",
                 primaryLight: "#FFB07F",
+                primaryTransparent: "#F3AA6077",
                 secondary: "#91C8E4",
                 secondaryDark: "#4682A9",
                 secondaryLight: "#A1CCD1",
+                secondaryTransparent: "#91C8E477",
                 textPrimary: "#F97B22",
                 textSecondary: "#4682A9",
                 textHint: "#445069",
@@ -863,10 +984,11 @@ class CanvasFeature extends Feature {
         return a.distanceFrom(b) / this.scaleCancelRatio;
     }
     // Draw methods
-    drawCircle(pos, { radius = 1, color = "black" } = {}) {
+    drawCircle(pos, { radius = 1, color = "black", fixedRadius = true, } = {}) {
         const { palette } = this.app;
         this.ctx.beginPath();
-        this.ctx.arc(pos.x * this.unitScale, pos.y * this.unitScale, radius * this.unitScale * this.scaleCancelRatio, 0, 2 * Math.PI);
+        const r = fixedRadius ? radius : radius * this.scaleCancelRatio;
+        this.ctx.arc(pos.x * this.unitScale, pos.y * this.unitScale, r * this.unitScale, 0, 2 * Math.PI);
         this.ctx.fillStyle = palette.colors[color];
         this.ctx.fill();
     }
@@ -921,12 +1043,29 @@ class CanvasFeature extends Feature {
         this.ctx.strokeStyle = palette.colors[arrowColor];
         this.ctx.stroke();
     }
-    drawRect(rect, { color = "black", lineWidth = 0.1, fill = false, fillColor = color, } = {}) {
+    drawRect(rect, { color = "black", lineWidth = 0.1, fill = false, fillColor = color, cornerRadius = 0, } = {}) {
         const { palette } = this.app;
         this.ctx.beginPath();
         this.ctx.lineWidth = lineWidth * this.unitScale * this.scaleCancelRatio;
-        this.ctx.rect(rect.bottomLeft.x * this.unitScale, rect.bottomLeft.y * this.unitScale, // y of the point above bottom left
-        rect.width * this.unitScale, rect.height * this.unitScale);
+        const { left, top, right, bottom, width, height } = rect
+            .clone()
+            .scale(this.unitScale);
+        if (cornerRadius > 0) {
+            let radius = cornerRadius * this.unitScale;
+            radius = Math.min(radius, width / 2, height / 2);
+            this.ctx.moveTo(left + radius, top);
+            this.ctx.arcTo(right, top, right, bottom, radius);
+            this.ctx.arcTo(right, bottom, left, bottom, radius);
+            this.ctx.arcTo(left, bottom, left, top, radius);
+            this.ctx.arcTo(left, top, right, top, radius);
+        }
+        else {
+            this.ctx.moveTo(left, top);
+            this.ctx.lineTo(right, top);
+            this.ctx.lineTo(right, bottom);
+            this.ctx.lineTo(left, bottom);
+            this.ctx.lineTo(left, top);
+        }
         this.ctx.strokeStyle = palette.colors[color];
         this.ctx.stroke();
         if (fill) {
@@ -1024,7 +1163,7 @@ class GridFeature extends Feature {
         this.cellSize = 0;
         this.bounds = Rect.zero();
         this.lineWidth = 0.01;
-        this.boundsBottomMargin = 0.2;
+        this.boundsMargin = Rect.zero();
         this.settings.add(this, "lineWidth", 0, 0.5);
     }
     update() {
@@ -1046,10 +1185,7 @@ class GridFeature extends Feature {
         canvas.setScale(this.cellSize);
     }
     setBounds() {
-        this.bounds.bottomLeft.setFrom(this.cells
-            .clone()
-            .scale(-1 / 2)
-            .scaleBy(1, 1 - this.boundsBottomMargin));
-        this.bounds.topRight.setFrom(this.cells.clone().scale(1 / 2));
+        this.bounds.bottomLeft.setFrom(this.minCells.clone().scale(-0.5).addPoint(this.boundsMargin.bottomLeft));
+        this.bounds.topRight.setFrom(this.minCells.clone().scale(0.5).subtractPoint(this.boundsMargin.topRight));
     }
 }

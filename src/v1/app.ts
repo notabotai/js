@@ -1,5 +1,7 @@
 import type dat from "../types/dat.gui";
 
+Math.sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+
 /* Point
  *
  * Utility class for 2D points
@@ -23,6 +25,9 @@ export class Point {
   static fromLength(len: number) {
     return new Point(len, 0);
   }
+  equals(point: Point) {
+    return this.x === point.x && this.y === point.y;
+  }
   set(x: number, y: number) {
     this.x = x;
     this.y = y;
@@ -31,11 +36,6 @@ export class Point {
   setFrom(point: Point) {
     this.x = point.x;
     this.y = point.y;
-    return this;
-  }
-  setTo(point: Point) {
-    point.x = this.x;
-    point.y = this.y;
     return this;
   }
   clone() {
@@ -262,20 +262,104 @@ export class Equation {
   }
 }
 
+/** Rect
+ *
+ * Utility class for 2D rectangles
+ * bottomLeft and topRight are the coordinates of the bottom-left and top-right corners
+ * parent is the parent rectangle, if any
+ */
+type MaybeRect = Rect | null;
+
 export class Rect {
   bottomLeft: Point;
   topRight: Point;
   parent: Rect | null = null;
-  constructor(bottomLeft: Point, topRight: Point, parent = null) {
+  constructor(bottomLeft: Point, topRight: Point, parent: MaybeRect = null) {
     this.bottomLeft = bottomLeft;
     this.topRight = topRight;
     this.parent = parent;
   }
-  static from(bottomLeft: Point, topRight: Point, parent = null) {
+  static from(bottomLeft: Point, topRight: Point, parent: MaybeRect = null) {
     return new Rect(bottomLeft, topRight, parent);
   }
   static zero() {
     return new Rect(Point.zero(), Point.zero());
+  }
+  static fromXY(x: number, y: number) {
+    return new Rect(Point.from(x, y), Point.from(x, y));
+  }
+  static fromScalar(s: number) {
+    return new Rect(Point.from(s, s), Point.from(s, s));
+  }
+  hStack(widths: number[], margin: MaybeRect = null, spacing = 0) {
+    const rects: Rect[] = [];
+    let { left, right, top, bottom } = this.withMargin(margin);
+    let x =
+      left +
+      (right - left - (widths.length - 1) * spacing - Math.sum(widths)) / 2;
+    for (const width of widths) {
+      rects.push(
+        new Rect(Point.from(x, bottom), Point.from(x + width, top), this)
+      );
+      x += width + spacing;
+    }
+    return rects;
+  }
+  hStackEqual(count: number, margin: MaybeRect = null) {
+    const rects: Rect[] = [];
+    let { left, right, top, bottom } = this.withMargin(margin);
+    const width = (right - left) / count;
+    let x = left;
+    for (let i = 0; i < count; i++) {
+      rects.push(
+        new Rect(Point.from(x, bottom), Point.from(x + width, top), this)
+      );
+      x += width;
+    }
+    return rects;
+  }
+  vStack(heights: number[], margin: MaybeRect = null, spacing = 0) {
+    const rects: Rect[] = [];
+    let { left, right, top, bottom } = this.withMargin(margin);
+    let y = bottom + (top - bottom - Math.sum(heights)) / 2;
+    for (const height of heights) {
+      rects.push(
+        new Rect(Point.from(left, y), Point.from(right, y + height), this)
+      );
+      y += height + spacing;
+    }
+    return rects;
+  }
+  vStackEqual(count: number, margin: MaybeRect = null) {
+    const rects: Rect[] = [];
+    const { left, right, top, bottom } = this.withMargin(margin);
+    const height = (top - bottom) / count;
+    let y = bottom;
+    for (let i = 0; i < count; i++) {
+      rects.push(
+        new Rect(Point.from(left, y), Point.from(right, y + height), this)
+      );
+      y += height;
+    }
+    return rects;
+  }
+  withMargin(margin: MaybeRect) {
+    if (!margin) {
+      return this;
+    }
+    return new Rect(
+      this.bottomLeft.clone().addPoint(margin.bottomLeft),
+      this.topRight.clone().subtractPoint(margin.topRight)
+    );
+  }
+  withMarginXY(x: number, y: number) {
+    return new Rect(
+      this.bottomLeft.clone().add(x, y),
+      this.topRight.clone().subtract(x, y)
+    );
+  }
+  withMarginAll(margin: number) {
+    return this.withMarginXY(margin, margin);
   }
   get width() {
     return this.topRight.x - this.bottomLeft.x;
@@ -306,6 +390,67 @@ export class Rect {
   }
   get size() {
     return new Point(this.width, this.height);
+  }
+  clone() {
+    return new Rect(this.bottomLeft.clone(), this.topRight.clone());
+  }
+  scale(s: number) {
+    this.bottomLeft.scale(s);
+    this.topRight.scale(s);
+    return this;
+  }
+}
+
+/** Table
+ *
+ * Utility class for 2D tables (grid of cells)
+ * rowCount and colCount are the number of rows and columns
+ * cells is a 1D array of all the cells
+ */
+export class Table<Cell> {
+  cells: Cell[];
+  rowCount: number;
+  colCount: number;
+  constructor(rowCount: number, colCount: number) {
+    this.cells = Array.from(Array(rowCount * colCount));
+    this.rowCount = rowCount;
+    this.colCount = colCount;
+  }
+  get allRows() {
+    return this.cells.reduce((rows: Cell[][], cell, index) => {
+      const row = Math.floor(index / this.rowCount);
+      rows[row] = rows[row] || [];
+      rows[row]?.push(cell);
+      return rows;
+    }, []);
+  }
+  get allCols() {
+    return this.cells.reduce((cols: Cell[][], cell, index) => {
+      const col = index % this.colCount;
+      cols[col] = cols[col] || [];
+      cols[col]?.push(cell);
+      return cols;
+    }, []);
+  }
+  row(index: number) {
+    return this.cells.slice(index * this.rowCount, (index + 1) * this.rowCount);
+  }
+  col(index: number) {
+    return this.cells.filter((_, i) => i % this.colCount === index);
+  }
+  cell(row: number, col: number) {
+    return this.cells[row * this.rowCount + col];
+  }
+  indexToPos(index: number) {
+    return Point.from(Math.floor(index / this.rowCount), index % this.colCount);
+  }
+  posToIndex(pos: Point) {
+    return pos.x * this.rowCount + pos.y;
+  }
+  forEachCell(fn: (cell: Cell, pos: Point) => void) {
+    this.cells.forEach((cell, index) => {
+      fn(cell, this.indexToPos(index));
+    });
   }
 }
 
@@ -546,9 +691,11 @@ type Palette = {
   primary: string;
   primaryDark: string;
   primaryLight: string;
+  primaryTransparent: string;
   secondary: string;
   secondaryDark: string;
   secondaryLight: string;
+  secondaryTransparent: string;
   textPrimary: string;
   textSecondary: string;
   textHint: string;
@@ -580,9 +727,11 @@ class PaletteFeature extends Feature {
       primary: "#F3AA60",
       primaryDark: "#F97B22",
       primaryLight: "#FFB07F",
+      primaryTransparent: "#F3AA6077",
       secondary: "#91C8E4",
       secondaryDark: "#4682A9",
       secondaryLight: "#A1CCD1",
+      secondaryTransparent: "#91C8E477",
       textPrimary: "#F97B22",
       textSecondary: "#4682A9",
       textHint: "#445069",
@@ -942,6 +1091,7 @@ type TriangleVertices = [Point, Point, Point];
 interface CanvasCircleOpts {
   radius: number;
   color: PaletteColor;
+  fixedRadius: boolean;
 }
 
 interface CanvasPointsOpts {
@@ -969,6 +1119,7 @@ interface CanvasLineOpts {
 interface CanvasRectOpts extends CanvasLineOpts {
   fill: boolean;
   fillColor: PaletteColor;
+  cornerRadius: number;
 }
 
 interface CanvasRingOpts {
@@ -1121,14 +1272,19 @@ class CanvasFeature extends Feature {
   // Draw methods
   drawCircle(
     pos: Point,
-    { radius = 1, color = "black" }: Partial<CanvasCircleOpts> = {}
+    {
+      radius = 1,
+      color = "black",
+      fixedRadius = true,
+    }: Partial<CanvasCircleOpts> = {}
   ) {
     const { palette } = this.app;
     this.ctx.beginPath();
+    const r = fixedRadius ? radius : radius * this.scaleCancelRatio;
     this.ctx.arc(
       pos.x * this.unitScale,
       pos.y * this.unitScale,
-      radius * this.unitScale * this.scaleCancelRatio,
+      r * this.unitScale,
       0,
       2 * Math.PI
     );
@@ -1237,17 +1393,30 @@ class CanvasFeature extends Feature {
       lineWidth = 0.1,
       fill = false,
       fillColor = color,
+      cornerRadius = 0,
     }: Partial<CanvasRectOpts> = {}
   ) {
     const { palette } = this.app;
     this.ctx.beginPath();
     this.ctx.lineWidth = lineWidth * this.unitScale * this.scaleCancelRatio;
-    this.ctx.rect(
-      rect.bottomLeft.x * this.unitScale,
-      rect.bottomLeft.y * this.unitScale, // y of the point above bottom left
-      rect.width * this.unitScale,
-      rect.height * this.unitScale
-    );
+    const { left, top, right, bottom, width, height } = rect
+      .clone()
+      .scale(this.unitScale);
+    if (cornerRadius > 0) {
+      let radius = cornerRadius * this.unitScale;
+      radius = Math.min(radius, width / 2, height / 2);
+      this.ctx.moveTo(left + radius, top);
+      this.ctx.arcTo(right, top, right, bottom, radius);
+      this.ctx.arcTo(right, bottom, left, bottom, radius);
+      this.ctx.arcTo(left, bottom, left, top, radius);
+      this.ctx.arcTo(left, top, right, top, radius);
+    } else {
+      this.ctx.moveTo(left, top);
+      this.ctx.lineTo(right, top);
+      this.ctx.lineTo(right, bottom);
+      this.ctx.lineTo(left, bottom);
+      this.ctx.lineTo(left, top);
+    }
     this.ctx.strokeStyle = palette.colors[color];
     this.ctx.stroke();
     if (fill) {
@@ -1375,7 +1544,7 @@ class GridFeature extends Feature {
   cellSize = 0;
   bounds = Rect.zero();
   lineWidth = 0.01;
-  boundsBottomMargin = 0.2;
+  boundsMargin = Rect.zero();
 
   constructor(app: App, name: string) {
     super(app, name);
@@ -1405,11 +1574,10 @@ class GridFeature extends Feature {
 
   setBounds() {
     this.bounds.bottomLeft.setFrom(
-      this.cells
-        .clone()
-        .scale(-1 / 2)
-        .scaleBy(1, 1 - this.boundsBottomMargin)
+      this.minCells.clone().scale(-0.5).addPoint(this.boundsMargin.bottomLeft)
     );
-    this.bounds.topRight.setFrom(this.cells.clone().scale(1 / 2));
+    this.bounds.topRight.setFrom(
+      this.minCells.clone().scale(0.5).subtractPoint(this.boundsMargin.topRight)
+    );
   }
 }
