@@ -44,22 +44,22 @@ export class Point {
         const dy = this.y - point.y;
         return Math.sqrt(dx * dx + dy * dy);
     }
-    add(x, y) {
+    addXY(x, y) {
         this.x += x;
         this.y += y;
         return this;
     }
-    addPoint(point) {
+    add(point) {
         this.x += point.x;
         this.y += point.y;
         return this;
     }
-    subtract(x, y) {
+    subtractXY(x, y) {
         this.x -= x;
         this.y -= y;
         return this;
     }
-    subtractPoint(point) {
+    subtract(point) {
         this.x -= point.x;
         this.y -= point.y;
         return this;
@@ -69,20 +69,23 @@ export class Point {
         this.y *= s;
         return this;
     }
-    scaleBy(x, y) {
+    scaleXY(x, y) {
         this.x *= x;
         this.y *= y;
         return this;
     }
-    scaleByPoint(point) {
+    scaleBy(point) {
         this.x *= point.x;
         this.y *= point.y;
         return this;
     }
-    clamp(min, max) {
+    clampMinMax(min, max) {
         this.x = Math.min(Math.max(this.x, min.x), max.x);
         this.y = Math.min(Math.max(this.y, min.y), max.y);
         return this;
+    }
+    clamp(rect) {
+        return this.clampMinMax(rect.bottomLeft, rect.topRight);
     }
     round() {
         this.x = Math.round(this.x);
@@ -161,18 +164,18 @@ export class Line {
         this.from = from;
         this.to = to;
     }
-    add(x, y) {
-        this.from.add(x, y);
-        this.to.add(x, y);
+    addXY(x, y) {
+        this.from.addXY(x, y);
+        this.to.addXY(x, y);
         return this;
     }
-    subtract(x, y) {
-        this.from.subtract(x, y);
-        this.to.subtract(x, y);
+    subtractXY(x, y) {
+        this.from.subtractXY(x, y);
+        this.to.subtractXY(x, y);
         return this;
     }
-    addPoint(point) {
-        this.add(point.x, point.y);
+    add(point) {
+        this.addXY(point.x, point.y);
         return this;
     }
     scale(s) {
@@ -224,7 +227,7 @@ export class Line {
         return eqn1.intersectionWith(eqn2);
     }
 }
-/** Equation
+/* Equation
  *
  * Utility class for 2D line equations
  * ax + by + c = 0
@@ -316,10 +319,10 @@ export class Rect {
         if (!margin) {
             return this;
         }
-        return new Rect(this.bottomLeft.clone().addPoint(margin.bottomLeft), this.topRight.clone().subtractPoint(margin.topRight));
+        return new Rect(this.bottomLeft.clone().add(margin.bottomLeft), this.topRight.clone().subtract(margin.topRight));
     }
     withMarginXY(x, y) {
-        return new Rect(this.bottomLeft.clone().add(x, y), this.topRight.clone().subtract(x, y));
+        return new Rect(this.bottomLeft.clone().addXY(x, y), this.topRight.clone().subtractXY(x, y));
     }
     withMarginAll(margin) {
         return this.withMarginXY(margin, margin);
@@ -360,7 +363,7 @@ export class Rect {
         return this;
     }
 }
-/** Triangle
+/* Triangle
  *
  * Utility class for 2D triangles
  * a, b, and c are the coordinates of the three corners
@@ -388,9 +391,9 @@ export class Triangle {
         return new Triangle(Point.zero(), Point.zero(), Point.zero());
     }
     translateXY(x, y) {
-        this.a.add(x, y);
-        this.b.add(x, y);
-        this.c.add(x, y);
+        this.a.addXY(x, y);
+        this.b.addXY(x, y);
+        this.c.addXY(x, y);
         return this;
     }
     translate(point) {
@@ -409,9 +412,9 @@ export class Triangle {
         return new Point((this.a.x + this.b.x + this.c.x) / 3, (this.a.y + this.b.y + this.c.y) / 3);
     }
     rotate(angle, center = Point.zero()) {
-        this.a.subtractPoint(center).rotate(angle).addPoint(center);
-        this.b.subtractPoint(center).rotate(angle).addPoint(center);
-        this.c.subtractPoint(center).rotate(angle).addPoint(center);
+        this.a.subtract(center).rotate(angle).add(center);
+        this.b.subtract(center).rotate(angle).add(center);
+        this.c.subtract(center).rotate(angle).add(center);
         return this;
     }
 }
@@ -428,7 +431,7 @@ export class Cell {
         this.pos = pos;
     }
 }
-/** Table
+/* Table
  *
  * Utility class for 2D tables (grid of cells)
  * rowCount and colCount are the number of rows and columns
@@ -754,7 +757,7 @@ class InputFeature extends Feature {
         this.pointerScreen.set(pos.clientX, pos.clientY);
         this._pointerMove = this.pointer;
         if (this.dragStart) {
-            this.dragDelta.setFrom(this.pointer).subtractPoint(this.dragStart);
+            this.dragDelta.setFrom(this.pointer).subtract(this.dragStart);
         }
     }
     onPointerUp(originalEvent) {
@@ -1185,7 +1188,7 @@ class DrawDebugFeature extends Feature {
         const labelPos = this.labelOffset
             .clone()
             .scale(canvas.scaleCancelRatio)
-            .addPoint(position);
+            .add(position);
         canvas.drawText(labelPos, label, {
             size: this.labelFontSize,
             font: this.labelFontFamily,
@@ -1228,7 +1231,7 @@ class GridFeature extends Feature {
         canvas.setScale(this.cellSize);
     }
     setBounds() {
-        this.bounds.bottomLeft.setFrom(this.minCells.clone().scale(-0.5).addPoint(this.boundsMargin.bottomLeft));
-        this.bounds.topRight.setFrom(this.minCells.clone().scale(0.5).subtractPoint(this.boundsMargin.topRight));
+        this.bounds.bottomLeft.setFrom(this.minCells.clone().scale(-0.5).add(this.boundsMargin.bottomLeft));
+        this.bounds.topRight.setFrom(this.minCells.clone().scale(0.5).subtract(this.boundsMargin.topRight));
     }
 }
