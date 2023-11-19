@@ -521,7 +521,7 @@ export class Feature {
  */
 class Debug {
     constructor() {
-        this.el = document.querySelector("#debug-el .debug-log");
+        this.el = document.querySelector("#debug-el");
         this.lines = [];
         this.loggedValues = {};
         this.enabled = false;

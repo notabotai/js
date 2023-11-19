@@ -614,7 +614,7 @@ type Stringifier = (value: DebugValue) => string | undefined;
  * Press Alt+P to show the pose data in the console
  */
 class Debug {
-  el = document.querySelector<HTMLElement>("#debug-el .debug-log");
+  el = document.querySelector<HTMLElement>("#debug-el");
   lines: string[] = [];
   loggedValues: { [key: string]: string } = {};
   enabled = false;
