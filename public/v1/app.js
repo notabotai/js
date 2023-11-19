@@ -14,6 +14,9 @@ export class Point {
     static zero() {
         return new Point(0, 0);
     }
+    static half() {
+        return new Point(0.5, 0.5);
+    }
     static from(x, y) {
         return new Point(x, y);
     }
@@ -95,13 +98,18 @@ export class Point {
         this.y /= len;
         return this;
     }
+    get angle() {
+        return Math.atan2(this.y, this.x);
+    }
     rotate(angle) {
         const len = this.len();
-        this.x += len * Math.cos(angle);
-        this.y += len * Math.sin(angle);
+        const currentAngle = this.angle;
+        this.x = len * Math.cos(currentAngle + angle);
+        this.y = len * Math.sin(currentAngle + angle);
         return this;
     }
     equationWithSlope(slope) {
+        // Explanation:
         // y - y1 = m(x - x1)
         // y - y1 = m.x - m.x1
         // -m.x + y + m.x1 - y1 = 0
@@ -352,6 +360,74 @@ export class Rect {
         return this;
     }
 }
+/** Triangle
+ *
+ * Utility class for 2D triangles
+ * a, b, and c are the coordinates of the three corners
+ */
+export class Triangle {
+    constructor(a, b, c) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+    }
+    static unit() {
+        return Triangle.equilateral(1).rotate(-Math.PI / 2);
+    }
+    static from(a, b, c) {
+        return new Triangle(a, b, c);
+    }
+    static equilateral(side) {
+        const height = Math.sqrt(side * side - (side / 2) * (side / 2));
+        return new Triangle(Point.from(0, 0), Point.from(side, 0), Point.from(side / 2, height)).translateXY(-side / 2, -height / 3);
+    }
+    static right(side) {
+        return new Triangle(Point.from(0, 0), Point.from(side, 0), Point.from(0, side));
+    }
+    static zero() {
+        return new Triangle(Point.zero(), Point.zero(), Point.zero());
+    }
+    translateXY(x, y) {
+        this.a.add(x, y);
+        this.b.add(x, y);
+        this.c.add(x, y);
+        return this;
+    }
+    translate(point) {
+        return this.translateXY(point.x, point.y);
+    }
+    scale(s) {
+        this.a.scale(s);
+        this.b.scale(s);
+        this.c.scale(s);
+        return this;
+    }
+    clone() {
+        return new Triangle(this.a.clone(), this.b.clone(), this.c.clone());
+    }
+    get centroid() {
+        return new Point((this.a.x + this.b.x + this.c.x) / 3, (this.a.y + this.b.y + this.c.y) / 3);
+    }
+    rotate(angle, center = Point.zero()) {
+        this.a.subtractPoint(center).rotate(angle).addPoint(center);
+        this.b.subtractPoint(center).rotate(angle).addPoint(center);
+        this.c.subtractPoint(center).rotate(angle).addPoint(center);
+        return this;
+    }
+}
+/* Cell
+ *
+ * A cell is a single unit in a table. It can be empty or contain a player or
+ * an obstacle.
+ *
+ * It's a data class
+ */
+export class Cell {
+    constructor(table, pos) {
+        this.table = table;
+        this.pos = pos;
+    }
+}
 /** Table
  *
  * Utility class for 2D tables (grid of cells)
@@ -359,48 +435,16 @@ export class Rect {
  * cells is a 1D array of all the cells
  */
 export class Table {
-    constructor(rowCount, colCount) {
-        this.cells = Array.from(Array(rowCount * colCount));
+    constructor(rowCount, colCount, bounds) {
         this.rowCount = rowCount;
         this.colCount = colCount;
-    }
-    get allRows() {
-        return this.cells.reduce((rows, cell, index) => {
-            var _a;
-            const row = Math.floor(index / this.rowCount);
-            rows[row] = rows[row] || [];
-            (_a = rows[row]) === null || _a === void 0 ? void 0 : _a.push(cell);
-            return rows;
-        }, []);
-    }
-    get allCols() {
-        return this.cells.reduce((cols, cell, index) => {
-            var _a;
-            const col = index % this.colCount;
-            cols[col] = cols[col] || [];
-            (_a = cols[col]) === null || _a === void 0 ? void 0 : _a.push(cell);
-            return cols;
-        }, []);
-    }
-    row(index) {
-        return this.cells.slice(index * this.rowCount, (index + 1) * this.rowCount);
-    }
-    col(index) {
-        return this.cells.filter((_, i) => i % this.colCount === index);
-    }
-    cell(row, col) {
-        return this.cells[row * this.rowCount + col];
+        this.bounds = bounds;
     }
     indexToPos(index) {
         return Point.from(Math.floor(index / this.rowCount), index % this.colCount);
     }
     posToIndex(pos) {
         return pos.x * this.rowCount + pos.y;
-    }
-    forEachCell(fn) {
-        this.cells.forEach((cell, index) => {
-            fn(cell, this.indexToPos(index));
-        });
     }
 }
 /* app
@@ -1081,16 +1125,15 @@ class CanvasFeature extends Feature {
         this.ctx.strokeStyle = palette.colors[color];
         this.ctx.stroke();
     }
-    drawTriangle(vertices, { color = "black", lineWidth = 0.1 } = {}) {
+    drawTriangle(triangle, { color = "black" } = {}) {
         const { palette } = this.app;
         this.ctx.beginPath();
-        this.ctx.moveTo(vertices[0].x * this.unitScale, vertices[0].y * this.unitScale);
-        this.ctx.lineTo(vertices[1].x * this.unitScale, vertices[1].y * this.unitScale);
-        this.ctx.lineTo(vertices[2].x * this.unitScale, vertices[2].y * this.unitScale);
+        this.ctx.moveTo(triangle.a.x * this.unitScale, triangle.a.y * this.unitScale);
+        this.ctx.lineTo(triangle.b.x * this.unitScale, triangle.b.y * this.unitScale);
+        this.ctx.lineTo(triangle.c.x * this.unitScale, triangle.c.y * this.unitScale);
         this.ctx.closePath();
-        this.ctx.lineWidth = lineWidth * this.unitScale * this.scaleCancelRatio;
-        this.ctx.strokeStyle = palette.colors[color];
-        this.ctx.stroke();
+        this.ctx.fillStyle = palette.colors[color];
+        this.ctx.fill();
     }
     drawGrid(cells, { lineWidth = 0.02 } = {}) {
         const { palette } = this.app;
