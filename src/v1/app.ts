@@ -410,6 +410,17 @@ export class Rect {
     this.topRight.scale(s);
     return this;
   }
+  intersect(rect: Rect) {
+    this.bottomLeft.set(
+      Math.max(this.bottomLeft.x, rect.bottomLeft.x),
+      Math.max(this.bottomLeft.y, rect.bottomLeft.y)
+    );
+    this.topRight.set(
+      Math.min(this.topRight.x, rect.topRight.x),
+      Math.min(this.topRight.y, rect.topRight.y)
+    );
+    return this;
+  }
 }
 
 /* Triangle
