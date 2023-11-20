@@ -575,6 +575,7 @@ class Debug {
             log: (key, ...values) => this.log(featureName, key, ...values),
             logLive: (key, ...values) => this.logLive(featureName, key, ...values),
             logValue: (key, ...values) => this.logValue(featureName, key, ...values),
+            breakpoint: () => this.breakpoint(),
         };
     }
     // Show the collected lines of debug log in the HTML element
@@ -1131,7 +1132,7 @@ class CanvasFeature extends Feature {
         this.ctx.strokeStyle = palette.colors[arrowColor];
         this.ctx.stroke();
     }
-    drawRect(rect, { color = "black", lineWidth = 0.1, fill = false, fillColor = color, cornerRadius = 0, } = {}) {
+    drawRect(rect, { color = "black", lineWidth = 0.005, fill = false, fillColor = color, cornerRadius = 0, } = {}) {
         const { palette } = this.app;
         this.ctx.beginPath();
         this.ctx.lineWidth = lineWidth * this.unitScale * this.scaleCancelRatio;
@@ -1152,7 +1153,7 @@ class CanvasFeature extends Feature {
             this.ctx.lineTo(right, top);
             this.ctx.lineTo(right, bottom);
             this.ctx.lineTo(left, bottom);
-            this.ctx.lineTo(left, top);
+            this.ctx.lineTo(left, top + this.ctx.lineWidth / 2); // to close the top left corner properly
         }
         this.ctx.strokeStyle = palette.colors[color];
         this.ctx.stroke();

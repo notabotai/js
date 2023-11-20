@@ -647,6 +647,7 @@ type DebugLogger = {
   log: (key: string, ...values: DebugValue[]) => void;
   logLive: (key: string, ...values: DebugValue[]) => void;
   logValue: (key: string, ...values: DebugValue[]) => void;
+  breakpoint: () => void;
 };
 
 type Stringifier = (value: DebugValue) => string | undefined;
@@ -682,6 +683,7 @@ class Debug {
         this.logLive(featureName, key, ...values),
       logValue: (key: string, ...values: DebugValue[]) =>
         this.logValue(featureName, key, ...values),
+      breakpoint: () => this.breakpoint(),
     };
   }
 
@@ -1508,7 +1510,7 @@ class CanvasFeature extends Feature {
     rect: Rect,
     {
       color = "black",
-      lineWidth = 0.1,
+      lineWidth = 0.005,
       fill = false,
       fillColor = color,
       cornerRadius = 0,
@@ -1533,7 +1535,7 @@ class CanvasFeature extends Feature {
       this.ctx.lineTo(right, top);
       this.ctx.lineTo(right, bottom);
       this.ctx.lineTo(left, bottom);
-      this.ctx.lineTo(left, top);
+      this.ctx.lineTo(left, top + this.ctx.lineWidth / 2); // to close the top left corner properly
     }
     this.ctx.strokeStyle = palette.colors[color];
     this.ctx.stroke();
