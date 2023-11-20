@@ -1557,28 +1557,19 @@ class CanvasFeature extends Feature {
     this.ctx.fill();
   }
 
-  drawGrid(cells: Point, { lineWidth = 0.02 }: Partial<CanvasGridOpts> = {}) {
+  drawGrid(bounds: Rect, { lineWidth = 0.02 }: Partial<CanvasGridOpts> = {}) {
     const { palette } = this.app;
     this.ctx.strokeStyle = palette.colors.divider;
     this.ctx.lineWidth = lineWidth * this.unitScale * this.scaleCancelRatio;
     this.ctx.beginPath();
-    const yEdge = this.height / 2 / this.scale;
-    for (let i = 0; i < cells.x / 2 + 1; i++) {
-      this.ctx.moveTo(i * this.unitScale, -yEdge);
-      this.ctx.lineTo(i * this.unitScale, yEdge);
-      if (i !== 0) {
-        this.ctx.moveTo(-i * this.unitScale, -yEdge);
-        this.ctx.lineTo(-i * this.unitScale, yEdge);
-      }
+    const { left, right, top, bottom } = bounds.clone().scale(this.unitScale);
+    for (let x = left + this.unitScale; x < right; x += this.unitScale) {
+      this.ctx.moveTo(x, bottom);
+      this.ctx.lineTo(x, top);
     }
-    const xEdge = this.width / 2 / this.scale;
-    for (let i = 0; i < cells.y / 2 + 1; i++) {
-      this.ctx.moveTo(-xEdge, i * this.unitScale);
-      this.ctx.lineTo(xEdge, i * this.unitScale);
-      if (i !== 0) {
-        this.ctx.moveTo(-xEdge, -i * this.unitScale);
-        this.ctx.lineTo(xEdge, -i * this.unitScale);
-      }
+    for (let y = bottom + this.unitScale; y < top; y += this.unitScale) {
+      this.ctx.moveTo(left, y);
+      this.ctx.lineTo(right, y);
     }
     this.ctx.stroke();
   }
@@ -1627,23 +1618,15 @@ class GridFeature extends Feature {
   cells = Point.zero();
   cellSize = 0;
   bounds = Rect.zero();
-  lineWidth = 0.01;
   boundsMargin = Rect.zero();
 
   constructor(app: App, name: string) {
     super(app, name);
-    this.settings.add(this, "lineWidth", 0, 0.5);
   }
 
   override update() {
     this.setCanvasScale();
     this.setBounds();
-  }
-
-  drawGrid(canvas: CanvasFeature) {
-    canvas.drawGrid(this.cells, {
-      lineWidth: this.lineWidth,
-    });
   }
 
   setCanvasScale() {
