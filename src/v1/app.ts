@@ -543,6 +543,9 @@ export class Table {
   posToIndex(pos: Point) {
     return pos.x * this.rowCount + pos.y;
   }
+  clone() {
+    return new Table(this.rowCount, this.colCount, this.bounds.clone());
+  }
 }
 
 /* app
