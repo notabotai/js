@@ -11,17 +11,30 @@ export class Point {
     toString() {
         return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)})`;
     }
-    static zero() {
-        return new Point(0, 0);
-    }
-    static half() {
-        return new Point(0.5, 0.5);
-    }
     static from(x, y) {
         return new Point(x, y);
     }
     static fromLength(len) {
         return new Point(len, 0);
+    }
+    static zero() {
+        return new Point(0, 0);
+    }
+    static half(positive = true) {
+        const amount = positive ? 0.5 : -0.5;
+        return new Point(amount, amount);
+    }
+    static up(amount = 1) {
+        return new Point(0, amount);
+    }
+    static down(amount = 1) {
+        return new Point(0, -amount);
+    }
+    static left(amount = 1) {
+        return new Point(-amount, 0);
+    }
+    static right(amount = 1) {
+        return new Point(amount, 0);
     }
     equals(point) {
         return this.x === point.x && this.y === point.y;
@@ -1065,11 +1078,11 @@ class CanvasFeature extends Feature {
         this.ctx.fill();
     }
     drawText(pos, text, { size = 0.5, font = "sans-serif", color = "black", align = "center", baseline = "alphabetic", // top, hanging, middle. ideographic, bottom
-     } = {}) {
+    fixedSize = true, } = {}) {
         const { palette } = this.app;
         this.ctx.textAlign = align;
         this.ctx.textBaseline = baseline;
-        const fontSize = size * this.unitScale * this.scaleCancelRatio;
+        const fontSize = size * this.unitScale * (fixedSize ? this.scaleCancelRatio : 1);
         this.ctx.font = `${fontSize}px ${font}`;
         this.ctx.fillStyle = palette.colors[color];
         this.ctx.fillText(text, pos.x * this.unitScale, pos.y * this.unitScale);
