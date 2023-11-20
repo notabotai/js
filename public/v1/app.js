@@ -17,6 +17,9 @@ export class Point {
     static fromLength(len) {
         return new Point(len, 0);
     }
+    static fromAngle(angle) {
+        return new Point(Math.cos(angle), Math.sin(angle));
+    }
     static zero() {
         return new Point(0, 0);
     }
@@ -39,12 +42,12 @@ export class Point {
     equals(point) {
         return this.x === point.x && this.y === point.y;
     }
-    set(x, y) {
+    setXY(x, y) {
         this.x = x;
         this.y = y;
         return this;
     }
-    setFrom(point) {
+    set(point) {
         this.x = point.x;
         this.y = point.y;
         return this;
@@ -173,7 +176,7 @@ export class Line {
     clone() {
         return new Line(this.from.clone(), this.to.clone());
     }
-    set(from, to) {
+    setFromTo(from, to) {
         this.from = from;
         this.to = to;
     }
@@ -285,6 +288,9 @@ export class Rect {
     static fromScalar(s) {
         return new Rect(Point.from(s, s), Point.from(s, s));
     }
+    static fromPoint(point) {
+        return new Rect(Point.zero(), point.clone());
+    }
     hStack(widths, margin = null, spacing = 0) {
         const rects = [];
         let { left, right, top, bottom } = this.withMargin(margin);
@@ -376,9 +382,15 @@ export class Rect {
         return this;
     }
     intersect(rect) {
-        this.bottomLeft.set(Math.max(this.bottomLeft.x, rect.bottomLeft.x), Math.max(this.bottomLeft.y, rect.bottomLeft.y));
-        this.topRight.set(Math.min(this.topRight.x, rect.topRight.x), Math.min(this.topRight.y, rect.topRight.y));
+        this.bottomLeft.setXY(Math.max(this.bottomLeft.x, rect.bottomLeft.x), Math.max(this.bottomLeft.y, rect.bottomLeft.y));
+        this.topRight.setXY(Math.min(this.topRight.x, rect.topRight.x), Math.min(this.topRight.y, rect.topRight.y));
         return this;
+    }
+    contains(point) {
+        return (point.x >= this.bottomLeft.x &&
+            point.x <= this.topRight.x &&
+            point.y >= this.bottomLeft.y &&
+            point.y <= this.topRight.y);
     }
 }
 /* Triangle
@@ -772,7 +784,7 @@ class InputFeature extends Feature {
     }
     onPointerDown(pos, originalEvent) {
         originalEvent.preventDefault();
-        this.pointerScreen.set(pos.clientX, pos.clientY);
+        this.pointerScreen.setXY(pos.clientX, pos.clientY);
         this._pointerDown = this.pointer;
         if (!this.dragStart) {
             this.dragStart = this.pointer.clone();
@@ -780,17 +792,17 @@ class InputFeature extends Feature {
     }
     onPointerMove(pos, originalEvent) {
         originalEvent.preventDefault();
-        this.pointerScreen.set(pos.clientX, pos.clientY);
+        this.pointerScreen.setXY(pos.clientX, pos.clientY);
         this._pointerMove = this.pointer;
         if (this.dragStart) {
-            this.dragDelta.setFrom(this.pointer).subtract(this.dragStart);
+            this.dragDelta.set(this.pointer).subtract(this.dragStart);
         }
     }
     onPointerUp(originalEvent) {
         originalEvent.preventDefault();
         this._pointerUp = this.pointer;
         this.dragStart = null;
-        this.dragDelta.set(0, 0);
+        this.dragDelta.setXY(0, 0);
     }
 }
 /* reloadOnChange
@@ -1047,7 +1059,7 @@ class CanvasFeature extends Feature {
         const rect = this.el.getBoundingClientRect();
         const dpr = window.devicePixelRatio;
         const scale = this.scale * this.unitScale;
-        point.set((dpr * (screenPoint.x - rect.left - this.width / dpr / 2)) / scale, (dpr * -(screenPoint.y - rect.top - this.height / dpr / 2)) / scale);
+        point.setXY((dpr * (screenPoint.x - rect.left - this.width / dpr / 2)) / scale, (dpr * -(screenPoint.y - rect.top - this.height / dpr / 2)) / scale);
     }
     // consider the device to be in portrait mode if the aspect ratio is less than 1.2
     isPortrait() {
@@ -1240,11 +1252,11 @@ class GridFeature extends Feature {
         const cellSizeX = width / this.minCells.x;
         const cellSizeY = height / this.minCells.y;
         this.cellSize = Math.min(cellSizeX, cellSizeY);
-        this.cells.set(width, height).scale(1 / this.cellSize);
+        this.cells.setXY(width, height).scale(1 / this.cellSize);
         canvas.setScale(this.cellSize);
     }
     setBounds() {
-        this.bounds.bottomLeft.setFrom(this.minCells.clone().scale(-0.5).add(this.boundsMargin.bottomLeft));
-        this.bounds.topRight.setFrom(this.minCells.clone().scale(0.5).subtract(this.boundsMargin.topRight));
+        this.bounds.bottomLeft.set(this.minCells.clone().scale(-0.5).add(this.boundsMargin.bottomLeft));
+        this.bounds.topRight.set(this.minCells.clone().scale(0.5).subtract(this.boundsMargin.topRight));
     }
 }
