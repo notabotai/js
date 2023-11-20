@@ -632,6 +632,7 @@ class Debug {
   lines: string[] = [];
   loggedValues: { [key: string]: string } = {};
   enabled = false;
+  hasBreakpoint = false;
 
   constructor() {
     this.enabled = this.getQueryParam("debug") === "true";
@@ -729,6 +730,11 @@ class Debug {
       })
       .join(", ");
     return `${featureName}: ${key} = ${valuesStr}`;
+  }
+
+  breakpoint() {
+    this.hasBreakpoint = true;
+    debugger;
   }
 }
 
@@ -1259,6 +1265,9 @@ class CanvasFeature extends Feature {
       this.el.width = this.width;
       this.el.height = this.height;
       this.toResizeNextFrame = false;
+    }
+    if (this.app.debug.hasBreakpoint) {
+      debugger;
     }
     this.clear();
     this.scaleCancelRatio =
