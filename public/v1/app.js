@@ -362,6 +362,11 @@ export class Rect {
         this.topRight.scale(s);
         return this;
     }
+    intersect(rect) {
+        this.bottomLeft.set(Math.max(this.bottomLeft.x, rect.bottomLeft.x), Math.max(this.bottomLeft.y, rect.bottomLeft.y));
+        this.topRight.set(Math.min(this.topRight.x, rect.topRight.x), Math.min(this.topRight.y, rect.topRight.y));
+        return this;
+    }
 }
 /* Triangle
  *
@@ -528,6 +533,7 @@ class Debug {
         this.lines = [];
         this.loggedValues = {};
         this.enabled = false;
+        this.hasBreakpoint = false;
         this.enabled = this.getQueryParam("debug") === "true";
     }
     flush() {
@@ -602,6 +608,10 @@ class Debug {
         })
             .join(", ");
         return `${featureName}: ${key} = ${valuesStr}`;
+    }
+    breakpoint() {
+        this.hasBreakpoint = true;
+        debugger;
     }
 }
 /* settings
@@ -944,7 +954,7 @@ class CanvasFeature extends Feature {
         this.height = 0;
         this.scale = 1;
         this.toResizeNextFrame = true; // features dependent on canvas should resize on first frame
-        this.unitScale = 50;
+        this.unitScale = 100;
         this.defaultScale = 5;
         this.scaleCancelRatio = 1;
         this.el =
@@ -971,6 +981,9 @@ class CanvasFeature extends Feature {
             this.el.width = this.width;
             this.el.height = this.height;
             this.toResizeNextFrame = false;
+        }
+        if (this.app.debug.hasBreakpoint) {
+            debugger;
         }
         this.clear();
         this.scaleCancelRatio =
@@ -1138,28 +1151,19 @@ class CanvasFeature extends Feature {
         this.ctx.fillStyle = palette.colors[color];
         this.ctx.fill();
     }
-    drawGrid(cells, { lineWidth = 0.02 } = {}) {
+    drawGrid(bounds, { lineWidth = 0.02 } = {}) {
         const { palette } = this.app;
         this.ctx.strokeStyle = palette.colors.divider;
         this.ctx.lineWidth = lineWidth * this.unitScale * this.scaleCancelRatio;
         this.ctx.beginPath();
-        const yEdge = this.height / 2 / this.scale;
-        for (let i = 0; i < cells.x / 2 + 1; i++) {
-            this.ctx.moveTo(i * this.unitScale, -yEdge);
-            this.ctx.lineTo(i * this.unitScale, yEdge);
-            if (i !== 0) {
-                this.ctx.moveTo(-i * this.unitScale, -yEdge);
-                this.ctx.lineTo(-i * this.unitScale, yEdge);
-            }
+        const { left, right, top, bottom } = bounds.clone().scale(this.unitScale);
+        for (let x = left + this.unitScale; x < right; x += this.unitScale) {
+            this.ctx.moveTo(x, bottom);
+            this.ctx.lineTo(x, top);
         }
-        const xEdge = this.width / 2 / this.scale;
-        for (let i = 0; i < cells.y / 2 + 1; i++) {
-            this.ctx.moveTo(-xEdge, i * this.unitScale);
-            this.ctx.lineTo(xEdge, i * this.unitScale);
-            if (i !== 0) {
-                this.ctx.moveTo(-xEdge, -i * this.unitScale);
-                this.ctx.lineTo(xEdge, -i * this.unitScale);
-            }
+        for (let y = bottom + this.unitScale; y < top; y += this.unitScale) {
+            this.ctx.moveTo(left, y);
+            this.ctx.lineTo(right, y);
         }
         this.ctx.stroke();
     }
@@ -1208,18 +1212,11 @@ class GridFeature extends Feature {
         this.cells = Point.zero();
         this.cellSize = 0;
         this.bounds = Rect.zero();
-        this.lineWidth = 0.01;
         this.boundsMargin = Rect.zero();
-        this.settings.add(this, "lineWidth", 0, 0.5);
     }
     update() {
         this.setCanvasScale();
         this.setBounds();
-    }
-    drawGrid(canvas) {
-        canvas.drawGrid(this.cells, {
-            lineWidth: this.lineWidth,
-        });
     }
     setCanvasScale() {
         const { canvas } = this.app;
