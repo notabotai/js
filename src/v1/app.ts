@@ -1231,7 +1231,7 @@ class CanvasFeature extends Feature {
   height = 0;
   scale = 1;
   toResizeNextFrame = true; // features dependent on canvas should resize on first frame
-  unitScale = 50;
+  unitScale = 100;
   defaultScale = 5;
   scaleCancelRatio = 1;
 
