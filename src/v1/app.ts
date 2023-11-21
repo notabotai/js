@@ -354,12 +354,12 @@ export class Rect {
   vStack(heights: number[], margin: MaybeRect = null, spacing = 0) {
     const rects: Rect[] = [];
     let { left, right, top, bottom } = this.withMargin(margin);
-    let y = bottom + (top - bottom - Math.sum(heights)) / 2;
+    let y = top - (top - bottom - Math.sum(heights)) / 2;
     for (const height of heights) {
       rects.push(
-        new Rect(Point.from(left, y), Point.from(right, y + height), this)
+        new Rect(Point.from(left, y - height), Point.from(right, y), this)
       );
-      y += height + spacing;
+      y -= height + spacing;
     }
     return rects;
   }
@@ -450,6 +450,16 @@ export class Rect {
       point.y >= this.bottomLeft.y &&
       point.y <= this.topRight.y
     );
+  }
+  translate(point: Point) {
+    this.bottomLeft.add(point);
+    this.topRight.add(point);
+    return this;
+  }
+  translateY(y: number) {
+    this.bottomLeft.y += y;
+    this.topRight.y += y;
+    return this;
   }
 }
 
@@ -1544,8 +1554,10 @@ class CanvasFeature extends Feature {
       this.ctx.lineTo(left, bottom);
       this.ctx.lineTo(left, top + this.ctx.lineWidth / 2); // to close the top left corner properly
     }
-    this.ctx.strokeStyle = palette.colors[color];
-    this.ctx.stroke();
+    if (lineWidth > 0) {
+      this.ctx.strokeStyle = palette.colors[color];
+      this.ctx.stroke();
+    }
     if (fill) {
       this.ctx.fillStyle = palette.colors[fillColor];
       this.ctx.fill();
