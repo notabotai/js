@@ -315,6 +315,9 @@ export class Rect {
   static fromXY(x: number, y: number) {
     return new Rect(Point.from(x, y), Point.from(x, y));
   }
+  static fromX2Y2(x1: number, y1: number, x2: number, y2: number) {
+    return new Rect(Point.from(x1, y1), Point.from(x2, y2));
+  }
   static fromScalar(s: number) {
     return new Rect(Point.from(s, s), Point.from(s, s));
   }
@@ -1206,6 +1209,8 @@ interface CanvasCircleOpts {
   radius: number;
   color: PaletteColor;
   fixedRadius: boolean;
+  arcStart: number;
+  arcEnd: number;
 }
 
 interface CanvasPointsOpts {
@@ -1394,6 +1399,8 @@ class CanvasFeature extends Feature {
       radius = 1,
       color = "black",
       fixedRadius = true,
+      arcStart = 0,
+      arcEnd = 2 * Math.PI,
     }: Partial<CanvasCircleOpts> = {}
   ) {
     const { palette } = this.app;
@@ -1403,8 +1410,8 @@ class CanvasFeature extends Feature {
       pos.x * this.unitScale,
       pos.y * this.unitScale,
       r * this.unitScale,
-      0,
-      2 * Math.PI
+      arcStart,
+      arcEnd
     );
     this.ctx.fillStyle = palette.colors[color];
     this.ctx.fill();
@@ -1440,7 +1447,7 @@ class CanvasFeature extends Feature {
       font = "sans-serif",
       color = "black",
       align = "center",
-      baseline = "alphabetic", // top, hanging, middle. ideographic, bottom
+      baseline = "middle", // alphabetic, top, hanging, middle, ideographic, bottom
       fixedSize = true,
     }: Partial<CanvasTextOpts> = {}
   ) {

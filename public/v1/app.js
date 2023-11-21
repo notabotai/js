@@ -285,6 +285,9 @@ export class Rect {
     static fromXY(x, y) {
         return new Rect(Point.from(x, y), Point.from(x, y));
     }
+    static fromX2Y2(x1, y1, x2, y2) {
+        return new Rect(Point.from(x1, y1), Point.from(x2, y2));
+    }
     static fromScalar(s) {
         return new Rect(Point.from(s, s), Point.from(s, s));
     }
@@ -1073,11 +1076,11 @@ class CanvasFeature extends Feature {
         return a.distanceFrom(b) / this.scaleCancelRatio;
     }
     // Draw methods
-    drawCircle(pos, { radius = 1, color = "black", fixedRadius = true, } = {}) {
+    drawCircle(pos, { radius = 1, color = "black", fixedRadius = true, arcStart = 0, arcEnd = 2 * Math.PI, } = {}) {
         const { palette } = this.app;
         this.ctx.beginPath();
         const r = fixedRadius ? radius : radius * this.scaleCancelRatio;
-        this.ctx.arc(pos.x * this.unitScale, pos.y * this.unitScale, r * this.unitScale, 0, 2 * Math.PI);
+        this.ctx.arc(pos.x * this.unitScale, pos.y * this.unitScale, r * this.unitScale, arcStart, arcEnd);
         this.ctx.fillStyle = palette.colors[color];
         this.ctx.fill();
     }
@@ -1093,7 +1096,7 @@ class CanvasFeature extends Feature {
         this.ctx.fillStyle = palette.colors[color];
         this.ctx.fill();
     }
-    drawText(pos, text, { size = 0.5, font = "sans-serif", color = "black", align = "center", baseline = "alphabetic", // top, hanging, middle. ideographic, bottom
+    drawText(pos, text, { size = 0.5, font = "sans-serif", color = "black", align = "center", baseline = "middle", // alphabetic, top, hanging, middle, ideographic, bottom
     fixedSize = true, } = {}) {
         const { palette } = this.app;
         this.ctx.textAlign = align;
