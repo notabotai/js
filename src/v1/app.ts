@@ -465,8 +465,11 @@ export class Rect {
     return this;
   }
   moveCenterTo(point: Point) {
-    const center = this.center;
-    this.translate(point.clone().subtract(center));
+    this.translate(point.clone().subtract(this.center));
+    return this;
+  }
+  moveCenterYTo(point: Point) {
+    this.translateY(point.y - this.center.y);
     return this;
   }
 }
