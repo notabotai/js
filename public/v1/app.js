@@ -408,6 +408,11 @@ export class Rect {
         this.topRight.y += y;
         return this;
     }
+    moveCenterTo(point) {
+        const center = this.center;
+        this.translate(point.clone().subtract(center));
+        return this;
+    }
 }
 /* Triangle
  *
