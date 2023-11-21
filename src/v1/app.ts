@@ -435,6 +435,11 @@ export class Rect {
     this.topRight.scale(s);
     return this;
   }
+  scaleX(s: number) {
+    this.bottomLeft.x *= s;
+    this.topRight.x *= s;
+    return this;
+  }
   intersect(rect: Rect) {
     this.bottomLeft.setXY(
       Math.max(this.bottomLeft.x, rect.bottomLeft.x),

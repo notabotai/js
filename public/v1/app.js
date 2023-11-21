@@ -387,6 +387,11 @@ export class Rect {
         this.topRight.scale(s);
         return this;
     }
+    scaleX(s) {
+        this.bottomLeft.x *= s;
+        this.topRight.x *= s;
+        return this;
+    }
     intersect(rect) {
         this.bottomLeft.setXY(Math.max(this.bottomLeft.x, rect.bottomLeft.x), Math.max(this.bottomLeft.y, rect.bottomLeft.y));
         this.topRight.setXY(Math.min(this.topRight.x, rect.topRight.x), Math.min(this.topRight.y, rect.topRight.y));
