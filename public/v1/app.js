@@ -282,6 +282,9 @@ export class Rect {
     static zero() {
         return new Rect(Point.zero(), Point.zero());
     }
+    static unit() {
+        return new Rect(Point.zero(), Point.from(1, 1));
+    }
     static fromXY(x, y) {
         return new Rect(Point.from(x, y), Point.from(x, y));
     }
@@ -1176,6 +1179,9 @@ class CanvasFeature extends Feature {
             this.ctx.fillStyle = palette.colors[fillColor];
             this.ctx.fill();
         }
+    }
+    drawRects(rects, opts = {}) {
+        rects.forEach((rect) => this.drawRect(rect, opts));
     }
     drawRing(pos, radius, { color = "black", lineWidth = 0.1, arcStart = 0, arcEnd = 2 * Math.PI, } = {}) {
         const { palette } = this.app;
