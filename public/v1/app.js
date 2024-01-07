@@ -545,11 +545,14 @@ export class App {
         appSettings.add(this, "browserTime").listen();
         appSettings.add(this, "time").listen();
         appSettings.add(this, "dt").listen();
-        const updateLoop = (browserTime) => {
+        const fps = +(this.debug.getQueryParam("fps") || "30") || 30;
+        const frameDelay = 1000 / fps;
+        const updateLoop = () => {
+            const browserTime = Date.now();
             if (this.paused) {
                 this.dt = 0;
                 this.browserTime = browserTime;
-                return requestAnimationFrame(updateLoop);
+                return setTimeout(updateLoop, frameDelay);
             }
             this.frame += 1;
             this.dt = browserTime - this.browserTime;
@@ -562,9 +565,9 @@ export class App {
                 feature.reset();
             }
             this.debug.flush();
-            return requestAnimationFrame(updateLoop);
+            return setTimeout(updateLoop, frameDelay);
         };
-        updateLoop(0);
+        updateLoop();
     }
 }
 export class Feature {
