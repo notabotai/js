@@ -72,17 +72,6 @@ export async function serveHttpRequests({ port = 8000 } = {}) {
       const url = new URL(requestEvent.request.url);
       let route = decodeURIComponent(url.pathname);
 
-      // // CORS
-      // requestEvent.response.headers.set("Access-Control-Allow-Origin", "*");
-      // requestEvent.response.headers.set(
-      //   "Access-Control-Allow-Methods",
-      //   "GET, POST, PUT, DELETE"
-      // );
-      // requestEvent.response.headers.set(
-      //   "Access-Control-Allow-Headers",
-      //   "Content-Type"
-      // );
-
       // routes
       if (routes.has(route)) {
         await routes.get(route)!(requestEvent);
@@ -109,6 +98,9 @@ export async function serveHttpRequests({ port = 8000 } = {}) {
         new Response(file.readable, {
           headers: {
             "Content-Type": getMimeType(fileExt),
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE",
+            "Access-Control-Allow-Headers": "Content-Type",
           },
         })
       );
