@@ -1,4 +1,6 @@
-import type dat from "../types/dat.gui";
+/// <reference lib="dom" />
+
+import type dat from "../types/dat.gui.d.ts";
 
 Math.sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
@@ -329,7 +331,7 @@ export class Rect {
   }
   hStack(widths: number[], margin: MaybeRect = null, spacing = 0) {
     const rects: Rect[] = [];
-    let { left, right, top, bottom } = this.withMargin(margin);
+    const { left, right, top, bottom } = this.withMargin(margin);
     let x =
       left +
       (right - left - (widths.length - 1) * spacing - Math.sum(widths)) / 2;
@@ -343,7 +345,7 @@ export class Rect {
   }
   hStackEqual(count: number, margin: MaybeRect = null) {
     const rects: Rect[] = [];
-    let { left, right, top, bottom } = this.withMargin(margin);
+    const { left, right, top, bottom } = this.withMargin(margin);
     const width = (right - left) / count;
     let x = left;
     for (let i = 0; i < count; i++) {
@@ -356,7 +358,7 @@ export class Rect {
   }
   vStack(heights: number[], margin: MaybeRect = null, spacing = 0) {
     const rects: Rect[] = [];
-    let { left, right, top, bottom } = this.withMargin(margin);
+    const { left, right, top, bottom } = this.withMargin(margin);
     let y = top - (top - bottom - Math.sum(heights)) / 2;
     for (const height of heights) {
       rects.push(
@@ -673,7 +675,7 @@ export abstract class Feature {
   reset(): void {}
 }
 
-type DebugValue = any;
+type DebugValue = object | number | string | boolean | undefined;
 
 type DebugLogger = {
   log: (key: string, ...values: DebugValue[]) => void;
@@ -798,6 +800,7 @@ class Debug {
 
   breakpoint() {
     this.hasBreakpoint = true;
+    // deno-lint-ignore no-debugger
     debugger;
   }
 }
@@ -807,6 +810,7 @@ class Debug {
  * Settings for the app, editable in UI
  */
 class Settings {
+  // deno-lint-ignore no-explicit-any
   gui: any = (function () {
     const mock = function () {
       return ret;
@@ -1047,6 +1051,7 @@ class ReloadOnChangeFeature extends Feature {
 }
 
 type AnimBase = {
+  // deno-lint-ignore no-explicit-any
   obj: any;
   property: string;
   startValue: number;
@@ -1139,6 +1144,7 @@ export class AnimateFeature extends Feature {
     });
   }
 
+  // deno-lint-ignore no-explicit-any
   byTime(obj: any, property: string, opts?: AnimOpts) {
     const app = this.app;
     opts = opts || {};
@@ -1188,6 +1194,7 @@ export class AnimateFeature extends Feature {
     });
   }
 
+  // deno-lint-ignore no-explicit-any
   bySpeed(obj: any, property: string, opts: AnimOpts) {
     opts = opts || {};
     opts.speed = opts.speed || this.animationSpeed;
@@ -1215,12 +1222,14 @@ export class AnimateFeature extends Feature {
     });
   }
 
+  // deno-lint-ignore no-explicit-any
   getAnimationIndex(obj: any, property: string) {
     return this.animations.findIndex(
       (anim: Anim) => anim.obj === obj && anim.property === property
     );
   }
 
+  // deno-lint-ignore no-explicit-any
   removeAnimation(obj: any, property: string) {
     const animationIndex = this.getAnimationIndex(obj, property);
     const animation = this.animations[animationIndex];
@@ -1263,6 +1272,7 @@ interface CanvasLineOpts {
   arrowStart: boolean;
   arrowEnd: boolean;
   arrowColor: PaletteColor;
+  fixedLineWidth: boolean;
 }
 
 interface CanvasRectOpts extends CanvasLineOpts {
@@ -1334,6 +1344,7 @@ class CanvasFeature extends Feature {
       this.toResizeNextFrame = false;
     }
     if (this.app.debug.hasBreakpoint) {
+      // deno-lint-ignore no-debugger
       debugger;
     }
     this.clear();
@@ -1499,14 +1510,17 @@ class CanvasFeature extends Feature {
       arrowStart = false,
       arrowEnd = false,
       arrowColor = color,
+      fixedLineWidth = true,
     }: Partial<CanvasLineOpts> = {}
   ) {
     const { palette } = this.app;
     this.ctx.beginPath();
-    const arrowWidth = arrowSize * this.unitScale * this.scaleCancelRatio;
+    const arrowWidth =
+      arrowSize * this.unitScale * (fixedLineWidth ? this.scaleCancelRatio : 1);
     const l = line.clone().scale(this.unitScale);
     const angle = l.angle();
-    this.ctx.lineWidth = lineWidth * this.unitScale * this.scaleCancelRatio;
+    this.ctx.lineWidth =
+      lineWidth * this.unitScale * (fixedLineWidth ? this.scaleCancelRatio : 1);
     this.ctx.moveTo(l.from.x, l.from.y);
     this.ctx.lineTo(l.to.x, l.to.y);
     this.ctx.strokeStyle = palette.colors[color];
@@ -1515,24 +1529,22 @@ class CanvasFeature extends Feature {
       this.ctx.beginPath();
     }
     if (arrowStart) {
-      this.ctx.moveTo(l.from.x, l.from.y);
-      this.ctx.lineTo(
+      this.ctx.moveTo(
         l.from.x + arrowWidth * Math.cos(angle + Math.PI / 4),
         l.from.y + arrowWidth * Math.sin(angle + Math.PI / 4)
       );
-      this.ctx.moveTo(l.from.x, l.from.y);
+      this.ctx.lineTo(l.from.x, l.from.y);
       this.ctx.lineTo(
         l.from.x + arrowWidth * Math.cos(angle - Math.PI / 4),
         l.from.y + arrowWidth * Math.sin(angle - Math.PI / 4)
       );
     }
     if (arrowEnd) {
-      this.ctx.moveTo(l.to.x, l.to.y);
-      this.ctx.lineTo(
+      this.ctx.moveTo(
         l.to.x + arrowWidth * Math.cos(angle + (Math.PI * 3) / 4),
         l.to.y + arrowWidth * Math.sin(angle + (Math.PI * 3) / 4)
       );
-      this.ctx.moveTo(l.to.x, l.to.y);
+      this.ctx.lineTo(l.to.x, l.to.y);
       this.ctx.lineTo(
         l.to.x + arrowWidth * Math.cos(angle - (Math.PI * 3) / 4),
         l.to.y + arrowWidth * Math.sin(angle - (Math.PI * 3) / 4)

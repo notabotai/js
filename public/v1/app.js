@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 Math.sum = (arr) => arr.reduce((a, b) => a + b, 0);
 /* Point
  *
@@ -299,7 +300,7 @@ export class Rect {
     }
     hStack(widths, margin = null, spacing = 0) {
         const rects = [];
-        let { left, right, top, bottom } = this.withMargin(margin);
+        const { left, right, top, bottom } = this.withMargin(margin);
         let x = left +
             (right - left - (widths.length - 1) * spacing - Math.sum(widths)) / 2;
         for (const width of widths) {
@@ -310,7 +311,7 @@ export class Rect {
     }
     hStackEqual(count, margin = null) {
         const rects = [];
-        let { left, right, top, bottom } = this.withMargin(margin);
+        const { left, right, top, bottom } = this.withMargin(margin);
         const width = (right - left) / count;
         let x = left;
         for (let i = 0; i < count; i++) {
@@ -321,7 +322,7 @@ export class Rect {
     }
     vStack(heights, margin = null, spacing = 0) {
         const rects = [];
-        let { left, right, top, bottom } = this.withMargin(margin);
+        const { left, right, top, bottom } = this.withMargin(margin);
         let y = top - (top - bottom - Math.sum(heights)) / 2;
         for (const height of heights) {
             rects.push(new Rect(Point.from(left, y - height), Point.from(right, y), this));
@@ -672,6 +673,7 @@ class Debug {
     }
     breakpoint() {
         this.hasBreakpoint = true;
+        // deno-lint-ignore no-debugger
         debugger;
     }
 }
@@ -681,6 +683,7 @@ class Debug {
  */
 class Settings {
     constructor(debug) {
+        // deno-lint-ignore no-explicit-any
         this.gui = (function () {
             const mock = function () {
                 return ret;
@@ -913,6 +916,7 @@ export class AnimateFeature extends Feature {
             }
         });
     }
+    // deno-lint-ignore no-explicit-any
     byTime(obj, property, opts) {
         const app = this.app;
         opts = opts || {};
@@ -962,6 +966,7 @@ export class AnimateFeature extends Feature {
             },
         });
     }
+    // deno-lint-ignore no-explicit-any
     bySpeed(obj, property, opts) {
         opts = opts || {};
         opts.speed = opts.speed || this.animationSpeed;
@@ -989,9 +994,11 @@ export class AnimateFeature extends Feature {
             },
         });
     }
+    // deno-lint-ignore no-explicit-any
     getAnimationIndex(obj, property) {
         return this.animations.findIndex((anim) => anim.obj === obj && anim.property === property);
     }
+    // deno-lint-ignore no-explicit-any
     removeAnimation(obj, property) {
         const animationIndex = this.getAnimationIndex(obj, property);
         const animation = this.animations[animationIndex];
@@ -1044,6 +1051,7 @@ class CanvasFeature extends Feature {
             this.toResizeNextFrame = false;
         }
         if (this.app.debug.hasBreakpoint) {
+            // deno-lint-ignore no-debugger
             debugger;
         }
         this.clear();
@@ -1135,13 +1143,14 @@ class CanvasFeature extends Feature {
         this.ctx.fillStyle = palette.colors[color];
         this.ctx.fillText(text, pos.x * this.unitScale, pos.y * this.unitScale);
     }
-    drawLine(line, { lineWidth = 1, color = "black", arrowSize = 0.15, arrowStart = false, arrowEnd = false, arrowColor = color, } = {}) {
+    drawLine(line, { lineWidth = 1, color = "black", arrowSize = 0.15, arrowStart = false, arrowEnd = false, arrowColor = color, fixedLineWidth = true, } = {}) {
         const { palette } = this.app;
         this.ctx.beginPath();
-        const arrowWidth = arrowSize * this.unitScale * this.scaleCancelRatio;
+        const arrowWidth = arrowSize * this.unitScale * (fixedLineWidth ? this.scaleCancelRatio : 1);
         const l = line.clone().scale(this.unitScale);
         const angle = l.angle();
-        this.ctx.lineWidth = lineWidth * this.unitScale * this.scaleCancelRatio;
+        this.ctx.lineWidth =
+            lineWidth * this.unitScale * (fixedLineWidth ? this.scaleCancelRatio : 1);
         this.ctx.moveTo(l.from.x, l.from.y);
         this.ctx.lineTo(l.to.x, l.to.y);
         this.ctx.strokeStyle = palette.colors[color];
@@ -1150,15 +1159,13 @@ class CanvasFeature extends Feature {
             this.ctx.beginPath();
         }
         if (arrowStart) {
-            this.ctx.moveTo(l.from.x, l.from.y);
-            this.ctx.lineTo(l.from.x + arrowWidth * Math.cos(angle + Math.PI / 4), l.from.y + arrowWidth * Math.sin(angle + Math.PI / 4));
-            this.ctx.moveTo(l.from.x, l.from.y);
+            this.ctx.moveTo(l.from.x + arrowWidth * Math.cos(angle + Math.PI / 4), l.from.y + arrowWidth * Math.sin(angle + Math.PI / 4));
+            this.ctx.lineTo(l.from.x, l.from.y);
             this.ctx.lineTo(l.from.x + arrowWidth * Math.cos(angle - Math.PI / 4), l.from.y + arrowWidth * Math.sin(angle - Math.PI / 4));
         }
         if (arrowEnd) {
-            this.ctx.moveTo(l.to.x, l.to.y);
-            this.ctx.lineTo(l.to.x + arrowWidth * Math.cos(angle + (Math.PI * 3) / 4), l.to.y + arrowWidth * Math.sin(angle + (Math.PI * 3) / 4));
-            this.ctx.moveTo(l.to.x, l.to.y);
+            this.ctx.moveTo(l.to.x + arrowWidth * Math.cos(angle + (Math.PI * 3) / 4), l.to.y + arrowWidth * Math.sin(angle + (Math.PI * 3) / 4));
+            this.ctx.lineTo(l.to.x, l.to.y);
             this.ctx.lineTo(l.to.x + arrowWidth * Math.cos(angle - (Math.PI * 3) / 4), l.to.y + arrowWidth * Math.sin(angle - (Math.PI * 3) / 4));
         }
         this.ctx.strokeStyle = palette.colors[arrowColor];
