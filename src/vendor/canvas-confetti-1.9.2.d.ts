@@ -1,17 +1,12 @@
-// Type definitions for canvas-confetti 1.6
-// Project: https://github.com/catdad/canvas-confetti#readme
-// Definitions by: Martin Tracey <https://github.com/matracey>
-//                 Josh Batley <https://github.com/joshbatley>
-// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
-
+// https://cdn.skypack.dev/-/canvas-confetti@v1.9.2-Tii8YtZuR6hfhzG218v7/dist=es2019,mode=types/index.d.ts
 /**
  * `confetti` takes a single optional object. When `window.Promise` is available, it will return a Promise to let you know when it is done.
  * When promises are not available (like in IE), it will return `null`. You can polyfill promises using any of the popular polyfills. You
  * can also provide a custom promise implementation to `confetti` through:
  *
  * ```
- *  const MyPromise = require('some-promise-lib');
- *  const confetti = require('canvas-confetti');
+ *  const MyPromise = require('/error/unknown:some-promise-lib?from=canvas-confetti');
+ *  const confetti = require('/error/unknown:canvas-confetti?from=canvas-confetti');
  *  confetti.Promise = MyPromise;
  * ```
  *

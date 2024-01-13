@@ -4,10 +4,9 @@ Utils for web development as ES6 libraries
 
 ## Local dev setup
 
-Compile TS
+Run local server
 
-    $ tsc --watch
+    $ deno run --allow-net --allow-env=DENO_DEPLOYMENT_ID,PORT --allow-read --allow-run server.ts
 
-Serve locally
+Needed allow-read for reading deno executable and allow-run for running that executable
 
-    $ deno run --allow-net --allow-read server.ts

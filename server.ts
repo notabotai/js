@@ -1,6 +1,12 @@
-import { watchDevDirs, serveHttpRequests } from "./public/server.ts";
+import { watchDevDirs, serveHttpRequests } from "./src/server.ts";
 
-watchDevDirs();
+watchDevDirs({
+  dirs: ["src"],
+  bundle: [],
+});
+
+const port = Deno.env.get("PORT");
 serveHttpRequests({
-  port: 8001,
+  port: port ? +port : 8001,
+  publicDir: "src",
 });

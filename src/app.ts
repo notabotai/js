@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 
-import type dat from "../types/dat.gui.d.ts";
+import type dat from "./vendor/dat.gui-0.7.9.d.ts";
 
 Math.sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
@@ -677,7 +677,7 @@ export abstract class Feature {
 
 type DebugValue = object | number | string | boolean | undefined;
 
-type DebugLogger = {
+export type DebugLogger = {
   log: (key: string, ...values: DebugValue[]) => void;
   logLive: (key: string, ...values: DebugValue[]) => void;
   logValue: (key: string, ...values: DebugValue[]) => void;
@@ -1301,7 +1301,7 @@ interface CanvasGridOpts {
  *
  * Manage the canvas element where the game is rendered
  */
-class CanvasFeature extends Feature {
+export class CanvasFeature extends Feature {
   el: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   width = 0;
