@@ -225,31 +225,19 @@ export async function serveHttpRequests({
 
 function getMimeType(fileExt: string | undefined) {
   switch (fileExt) {
-    case "html":
-      return "text/html";
-    case "js":
-      return "text/javascript";
-    case "css":
-      return "text/css";
-    case "png":
-      return "image/png";
-    case "ico":
-      return "image/x-icon";
-    case "svg":
-      return "image/svg+xml";
-    case "json":
-      return "application/json";
-    case "woff":
-      return "font/woff";
-    case "woff2":
-      return "font/woff2";
-    case "txt":
-      return "text/plain";
-    case "md":
-      return "text/markdown";
-    case undefined:
-      return "text/plain";
-    default:
-      return "application/octet-stream";
+    case "html": return "text/html";
+    case "js": return "text/javascript";
+    case "ts": return "text/typescript";
+    case "css": return "text/css";
+    case "png": return "image/png";
+    case "ico": return "image/x-icon";
+    case "svg": return "image/svg+xml";
+    case "json": return "application/json";
+    case "woff": return "font/woff";
+    case "woff2": return "font/woff2";
+    case "txt": return "text/plain";
+    case "md": return "text/markdown";
+    case undefined: return "text/plain";
+    default: return "application/octet-stream";
   }
 }
