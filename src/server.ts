@@ -13,7 +13,11 @@ export function watchDevDirs({
 
   let timeout: number | undefined;
   for (const dir of dirs) {
-    watchDir(dir);
+    try {
+      watchDir(dir);
+    } catch (err) {
+      console.error("watchDir failure", err);
+    }
   }
 
   routes.set("/last-change", async (requestEvent) => {
@@ -91,7 +95,11 @@ export async function serveHttpRequests({
   publicDir = "public",
 } = {}) {
   for await (const conn of Deno.listen({ port: +port })) {
-    handleHttp(conn).catch(console.error);
+    try {
+      handleHttp(conn).catch(console.error);
+    } catch (err) {
+      console.error("handleHttp failure", err);
+    }
   }
 
   async function handleHttp(conn: Deno.Conn) {
@@ -109,6 +117,27 @@ export async function serveHttpRequests({
       // index.html
       if (route === "/") {
         route = "/index.html";
+      }
+
+      // html files get templated
+      if (route.endsWith(".html")) {
+        // read file and replace __js__ with js/ import map source
+        const content = await Deno.readTextFile(publicDir + route);
+        let resourceUrl = "";
+        try {
+          resourceUrl = JSON.parse(await Deno.readTextFile("./deno.json")).imports["js/"];
+        } catch (err) {
+          console.error("Failed to read deno.json for import map", err);
+        }
+        const response = content.replaceAll("__js__", resourceUrl);
+        await requestEvent.respondWith(
+          new Response(response, {
+            headers: {
+              "Content-Type": "text/html",
+            },
+          })
+        );
+        continue;
       }
 
       // static files
