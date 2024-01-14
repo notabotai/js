@@ -103,15 +103,27 @@ export async function serveHttpRequests({
   githubRepo = "notabotai/js",
 } = {}) {
   for await (const conn of Deno.listen({ port: +port })) {
+    handleConn(conn).catch((err) => {
+      console.error("handleConn failure", err);
+    });
+  }
+
+  async function handleConn(conn: Deno.Conn) {
     const httpConn = Deno.serveHttp(conn);
     for await (const requestEvent of httpConn) {
-      try {
-        await sendResponse(requestEvent, await handleRequest(requestEvent))
-      } catch (err) {
-        console.error("request handling failure", err);
-        await sendResponse(requestEvent, response500);
-      }
+      handleRequest(requestEvent).catch((err) => {
+        console.error("handleRequest failure", err);
+        sendResponse(requestEvent, response500).catch((err) => {
+          console.error("sendResponse failure when sending 500", err);
+        });
+      });
     }
+  }
+
+  async function handleRequest(requestEvent: Deno.RequestEvent) {
+    sendResponse(requestEvent, await getResponse(requestEvent)).catch((err) => {
+      console.error("sendResponse failure", err);
+    });
   }
 
   async function sendResponse(requestEvent: Deno.RequestEvent, response: HttpResponse) {
@@ -119,7 +131,7 @@ export async function serveHttpRequests({
     await requestEvent.respondWith(new Response(content, { status, headers }));
   }
 
-  async function handleRequest(requestEvent: Deno.RequestEvent) {
+  async function getResponse(requestEvent: Deno.RequestEvent) {
     const url = new URL(requestEvent.request.url);
     let route = decodeURIComponent(url.pathname);
 
@@ -129,7 +141,6 @@ export async function serveHttpRequests({
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE",
       "Access-Control-Allow-Headers": "Content-Type",
     };
-    console.log("request", route);
 
     // defined routes
     if (routes.has(route)) {
@@ -151,16 +162,21 @@ export async function serveHttpRequests({
     }
 
     // static files
-    if (route === "/") route = "/index.html"; // default to index.html
+    if (route === "/") {
+      route = "/index.html"; // default to index.html
+      defaultHeaders["Content-Type"] = "text/html";
+    }
     let file: Deno.FsFile | undefined;
     let typesFile: Deno.FsFile | undefined;
     try {
-      file = await Deno.open(publicDir + route, { read: true });
+      if ((await Deno.stat(publicDir + route)).isFile) {
+        file = await Deno.open(publicDir + route, { read: true });
+      }
     } catch {
       console.log("404", route);
       return response404;
     }
-    if (route.endsWith(".js")) {
+    if (file && route.endsWith(".js")) {
       try {
         typesFile = await Deno.open(publicDir + route.replace(/\.js$/, ".d.ts"), { read: true });
       } catch {
@@ -202,6 +218,7 @@ export async function serveHttpRequests({
       return new HttpResponse(file.readable, headers);
     }
 
+    console.log("404", route);
     return response404;
   }
 }
