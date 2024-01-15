@@ -1,7 +1,9 @@
 /// <reference lib="dom" />
 
 import { Point } from "./geom/Point.ts";
-import { Line, Rect, Triangle } from "./geom/index.ts";
+import { Line } from "./geom/Line.ts";
+import { Rect } from "./geom/Rect.ts";
+import { Triangle } from "./geom/Triangle.ts";
 
 import { Debug, DebugLogger } from "./Debug.ts";
 import { Settings } from "./Settings.ts";
@@ -76,6 +78,24 @@ export class App {
   }
 }
 
+export abstract class Feature {
+  name: string;
+  app: App;
+  debug: DebugLogger;
+  settings: dat.GUI;
+
+  constructor(app: App, name: string) {
+    this.app = app;
+    this.name = name;
+    this.app.features.push(this);
+    this.settings = this.app.settings.gui.addFolder(this.name);
+    this.debug = this.app.debug.getNamespace(this.name);
+  }
+
+  update(): void {}
+  reset(): void {}
+}
+
 type AnimBase = {
   // deno-lint-ignore no-explicit-any
   obj: any;
@@ -100,24 +120,6 @@ type Anim = AnimBase &
         speed: number;
       }
   );
-
-export abstract class Feature {
-  name: string;
-  app: App;
-  debug: DebugLogger;
-  settings: dat.GUI;
-
-  constructor(app: App, name: string) {
-    this.app = app;
-    this.name = name;
-    this.app.features.push(this);
-    this.settings = this.app.settings.gui.addFolder(this.name);
-    this.debug = this.app.debug.getNamespace(this.name);
-  }
-
-  update(): void {}
-  reset(): void {}
-}
 
 type AnimOpts = {
   speed?: number;

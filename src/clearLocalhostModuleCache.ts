@@ -28,8 +28,8 @@ export async function clearLocalhostModuleCache({
     stderr: "piped",
   }).output();
   if (code !== 0) {
-    console.log("typecheck stdout:", textDecoder.decode(stdout));
-    console.error("typecheck stderr:", textDecoder.decode(stderr));
+    console.log("cache reload stdout:", textDecoder.decode(stdout));
+    console.error("cache reload stderr:", textDecoder.decode(stderr));
     return;
   }
 }
