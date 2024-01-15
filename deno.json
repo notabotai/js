@@ -1,0 +1,5 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-net --allow-env=DENO_DEPLOYMENT_ID,PORT --allow-read --allow-write --allow-run --unstable --watch server.ts"
+  }
+}

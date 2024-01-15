@@ -1,4 +1,5 @@
-import { watchDevDirs, serveHttpRequests } from "./src/server.ts";
+import { watchDevDirs } from "./src/watchDevDirs.ts";
+import { serveHttpRequests } from "./src/serveHttpRequests.ts";
 
 watchDevDirs({
   dirs: ["src"],
