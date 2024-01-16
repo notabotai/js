@@ -5,8 +5,9 @@ export const openConnections: ReadableStreamDefaultController[] = [];
 
 const textDecoder = new TextDecoder();
 
+// change in src/ -> deno bundle src/app.ts public/app.js -> browser reload
 export function watchDevDirs({
-  dirs = ["src", "public"],
+  dirs = ["src"],
   bundle = ["src/app.ts", "public/app.js"],
 } = {}) {
   if (isProd) return;
@@ -83,15 +84,15 @@ async function onFileChange({
   }
 
   // If file is .ts then run deno bundle on it
-  if (bundle.length && event.paths[0].endsWith(bundle[0])) {
+  if (bundle.length) {
     const { code, stdout, stderr } = await new Deno.Command(Deno.execPath(), {
       args: ["bundle", bundle[0], bundle[1]],
       stdout: "piped",
       stderr: "piped",
     }).output();
+    console.log("bundle stdout:", textDecoder.decode(stdout));
+    console.error("bundle stderr:", textDecoder.decode(stderr));
     if (code !== 0) {
-      console.log("typecheck stdout:", textDecoder.decode(stdout));
-      console.error("typecheck stderr:", textDecoder.decode(stderr));
       return;
     }
   }
