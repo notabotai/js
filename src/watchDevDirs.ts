@@ -42,7 +42,7 @@ export function watchDevDirs({
   async function watchDir(dir: string) {
     for await (const event of Deno.watchFs(dir, { recursive: true })) {
       clearTimeout(timeout);
-      timeout = setTimeout(onFileChange, 1000, {
+      timeout = setTimeout(onFileChange, 100, {
         dir,
         event,
         time: new Date(),
