@@ -7,7 +7,7 @@ import { Rect } from "../geom/Rect.ts";
  * Show a grid of lines as a coordinate system
  */
 export class GridFeature extends Feature {
-  minCells = Point.from(16, 10);
+  minCells = new Point(16, 10);
   cells = Point.zero();
   cellSize = 0;
   bounds = Rect.zero();

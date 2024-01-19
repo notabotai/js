@@ -23,16 +23,16 @@ export class Triangle {
   static equilateral(side: number) {
     const height = Math.sqrt(side * side - (side / 2) * (side / 2));
     return new Triangle(
-      Point.from(0, 0),
-      Point.from(side, 0),
-      Point.from(side / 2, height)
+      new Point(0, 0),
+      new Point(side, 0),
+      new Point(side / 2, height)
     ).translateXY(-side / 2, -height / 3);
   }
   static right(side: number) {
     return new Triangle(
-      Point.from(0, 0),
-      Point.from(side, 0),
-      Point.from(0, side)
+      new Point(0, 0),
+      new Point(side, 0),
+      new Point(0, side)
     );
   }
   static zero() {

@@ -15,12 +15,8 @@ export class Line {
     this.to = to;
   }
 
-  static between(from: Point, to: Point) {
-    return new Line(from.clone(), to.clone());
-  }
-
   static fromRay(ray: Ray, length: number) {
-    const endPosition = Point.from(
+    const endPosition = new Point(
       ray.from.x + length * Math.cos(ray.angle),
       ray.from.y + length * Math.sin(ray.angle)
     );

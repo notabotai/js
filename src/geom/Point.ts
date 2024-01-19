@@ -16,9 +16,6 @@ export class Point {
   toString() {
     return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)})`;
   }
-  static from(x: number, y: number) {
-    return new Point(x, y);
-  }
   static fromLength(len: number) {
     return new Point(len, 0);
   }

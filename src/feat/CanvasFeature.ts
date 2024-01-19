@@ -45,6 +45,7 @@ interface CanvasLineOpts {
   arrowStart: boolean;
   arrowEnd: boolean;
   arrowColor: PaletteColor;
+  rounded: boolean;
 }
 
 interface CanvasRayOpts {
@@ -248,10 +249,6 @@ export class CanvasFeature extends Feature {
     this.ctx.lineWidth =
       lineWidth * this.unitScale * this.scaleFor(fixedLineWidth);
     const radius = arc.radius * this.scaleFor(fixedRadius);
-    this.debug.logLive("arc.radius", arc.radius);
-    this.debug.logLive("radius", radius);
-    this.debug.logLive("this.scaleCancelRatio", this.scaleCancelRatio);
-    this.debug.logLive("this.unitScale", this.unitScale);
     this.ctx.arc(
       arc.center.x * this.unitScale,
       arc.center.y * this.unitScale,
@@ -326,12 +323,13 @@ export class CanvasFeature extends Feature {
     line: Line,
     {
       lineWidth = 0.1,
+      fixedLineWidth = true,
       color = "black",
       arrowSize = 0.15,
       arrowStart = false,
       arrowEnd = false,
       arrowColor = color,
-      fixedLineWidth = true,
+      rounded = false,
     }: Partial<CanvasLineOpts> = {}
   ) {
     const { palette } = this.app;
@@ -342,6 +340,7 @@ export class CanvasFeature extends Feature {
     const angle = l.angle();
     this.ctx.lineWidth =
       lineWidth * this.unitScale * this.scaleFor(fixedLineWidth);
+    this.ctx.lineCap = rounded ? "round" : "butt";
     this.ctx.moveTo(l.from.x, l.from.y);
     this.ctx.lineTo(l.to.x, l.to.y);
     this.ctx.strokeStyle = palette.colors[color];

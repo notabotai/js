@@ -17,7 +17,7 @@ export class Table {
     this.bounds = bounds;
   }
   indexToPos(index: number) {
-    return Point.from(Math.floor(index / this.rowCount), index % this.colCount);
+    return new Point(Math.floor(index / this.rowCount), index % this.colCount);
   }
   posToIndex(pos: Point) {
     return pos.x * this.rowCount + pos.y;

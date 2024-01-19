@@ -24,16 +24,16 @@ export class Rect {
     return new Rect(Point.zero(), Point.zero());
   }
   static unit() {
-    return new Rect(Point.zero(), Point.from(1, 1));
+    return new Rect(Point.zero(), new Point(1, 1));
   }
   static fromXY(x: number, y: number) {
-    return new Rect(Point.from(x, y), Point.from(x, y));
+    return new Rect(new Point(x, y), new Point(x, y));
   }
   static fromX2Y2(x1: number, y1: number, x2: number, y2: number) {
-    return new Rect(Point.from(x1, y1), Point.from(x2, y2));
+    return new Rect(new Point(x1, y1), new Point(x2, y2));
   }
   static fromScalar(s: number) {
-    return new Rect(Point.from(s, s), Point.from(s, s));
+    return new Rect(new Point(s, s), new Point(s, s));
   }
   static fromPoint(point: Point) {
     return new Rect(Point.zero(), point.clone());
@@ -45,7 +45,7 @@ export class Rect {
       left + (right - left - (widths.length - 1) * spacing - sum(widths)) / 2;
     for (const width of widths) {
       rects.push(
-        new Rect(Point.from(x, bottom), Point.from(x + width, top), this)
+        new Rect(new Point(x, bottom), new Point(x + width, top), this)
       );
       x += width + spacing;
     }
@@ -58,7 +58,7 @@ export class Rect {
     let x = left;
     for (let i = 0; i < count; i++) {
       rects.push(
-        new Rect(Point.from(x, bottom), Point.from(x + width, top), this)
+        new Rect(new Point(x, bottom), new Point(x + width, top), this)
       );
       x += width;
     }
@@ -70,7 +70,7 @@ export class Rect {
     let y = top - (top - bottom - sum(heights)) / 2;
     for (const height of heights) {
       rects.push(
-        new Rect(Point.from(left, y - height), Point.from(right, y), this)
+        new Rect(new Point(left, y - height), new Point(right, y), this)
       );
       y -= height + spacing;
     }
@@ -83,7 +83,7 @@ export class Rect {
     let y = bottom;
     for (let i = 0; i < count; i++) {
       rects.push(
-        new Rect(Point.from(left, y), Point.from(right, y + height), this)
+        new Rect(new Point(left, y), new Point(right, y + height), this)
       );
       y += height;
     }
