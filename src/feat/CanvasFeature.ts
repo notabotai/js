@@ -219,7 +219,7 @@ export class CanvasFeature extends Feature {
   // Draw methods
   drawCircle(
     circle: Circle,
-    { color = "black", fixedRadius = true }: Partial<CanvasCircleOpts> = {}
+    { color = "black", fixedRadius = false }: Partial<CanvasCircleOpts> = {}
   ) {
     const { palette } = this.app;
     this.ctx.beginPath();
@@ -240,8 +240,8 @@ export class CanvasFeature extends Feature {
     {
       color = "black",
       lineWidth = 0.1,
-      fixedLineWidth = true,
-      fixedRadius = true,
+      fixedLineWidth = false,
+      fixedRadius = false,
     }: Partial<CanvasArcOpts> = {}
   ) {
     const { palette } = this.app;
@@ -265,7 +265,7 @@ export class CanvasFeature extends Feature {
     {
       radius = 0.5,
       color = "black",
-      fixedRadius = true,
+      fixedRadius = false,
     }: Partial<CanvasPointOpts> = {}
   ) {
     this.ctx.beginPath();
@@ -280,7 +280,7 @@ export class CanvasFeature extends Feature {
     {
       radius = 0.5,
       color = "black",
-      fixedRadius = true,
+      fixedRadius = false,
     }: Partial<CanvasPointOpts> = {}
   ) {
     const { palette } = this.app;
@@ -307,7 +307,7 @@ export class CanvasFeature extends Feature {
       color = "black",
       align = "center",
       baseline = "middle", // alphabetic, top, hanging, middle, ideographic, bottom
-      fixedSize = true,
+      fixedSize = false,
     }: Partial<CanvasTextOpts> = {}
   ) {
     const { palette } = this.app;
@@ -323,13 +323,13 @@ export class CanvasFeature extends Feature {
     line: Line,
     {
       lineWidth = 0.1,
-      fixedLineWidth = true,
       color = "black",
       arrowSize = 0.15,
       arrowStart = false,
       arrowEnd = false,
       arrowColor = color,
       rounded = false,
+      fixedLineWidth = false,
     }: Partial<CanvasLineOpts> = {}
   ) {
     const { palette } = this.app;
@@ -383,7 +383,7 @@ export class CanvasFeature extends Feature {
       arrowSize = 0.15,
       arrowColor = color,
       length = 0.8,
-      fixedLineWidth = true,
+      fixedLineWidth = false,
     }: Partial<CanvasRayOpts> = {}
   ) {
     this.drawLine(Line.fromRay(ray, length), {
@@ -401,7 +401,7 @@ export class CanvasFeature extends Feature {
     {
       color = "black",
       lineWidth = 0.005,
-      fixedLineWidth = true,
+      fixedLineWidth = false,
       fill = false,
       fillColor = color,
       cornerRadius = 0,
@@ -468,7 +468,7 @@ export class CanvasFeature extends Feature {
 
   drawGrid(
     bounds: Rect,
-    { lineWidth = 0.02, fixedLineWidth = true }: Partial<CanvasGridOpts> = {}
+    { lineWidth = 0.02, fixedLineWidth = false }: Partial<CanvasGridOpts> = {}
   ) {
     const { palette } = this.app;
     this.ctx.strokeStyle = palette.colors.divider;
