@@ -65,6 +65,7 @@ interface CanvasRectOpts {
   fill: boolean;
   fillColor: PaletteColor;
   cornerRadius: number;
+  dashed: boolean;
 }
 
 interface CanvasTriangleOpts {
@@ -400,11 +401,12 @@ export class CanvasFeature extends Feature {
     rect: Rect,
     {
       color = "black",
-      lineWidth = 0.005,
+      lineWidth = 0.05,
       fixedLineWidth = false,
       fill = false,
       fillColor = color,
       cornerRadius = 0,
+      dashed = false,
     }: Partial<CanvasRectOpts> = {}
   ) {
     const { palette } = this.app;
@@ -430,8 +432,12 @@ export class CanvasFeature extends Feature {
       this.ctx.lineTo(left, top + this.ctx.lineWidth / 2); // to close the top left corner properly
     }
     if (lineWidth > 0) {
+      if (dashed) {
+        this.ctx.setLineDash([lineWidth * this.unitScale * 2]);
+      }
       this.ctx.strokeStyle = palette.colors[color];
       this.ctx.stroke();
+      this.ctx.setLineDash([]);
     }
     if (fill) {
       this.ctx.fillStyle = palette.colors[fillColor];
