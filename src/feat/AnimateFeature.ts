@@ -11,7 +11,7 @@ type AnimBase = {
   progress: number;
   range?: NumRange;
 };
-type Anim = AnimBase &
+export type Anim = AnimBase &
   (
     | {
         type: "byTime";
@@ -24,6 +24,7 @@ type Anim = AnimBase &
     | {
         type: "bySpeed";
         speed: number;
+        reachingThreshold: number;
       }
   );
 
@@ -86,14 +87,11 @@ export class AnimateFeature extends Feature {
         }
       } else if (anim.type === "bySpeed") {
         const { currentValue, endValue, speed } = anim;
-        if (Math.abs(currentValue - endValue) < this.reachingThreshold) {
+        if (Math.abs(currentValue - endValue) < anim.reachingThreshold) {
           anim.currentValue = endValue;
         } else {
           anim.currentValue = currentValue + speed * (endValue - currentValue);
         }
-      }
-      if (anim.range !== undefined) {
-        anim.currentValue = anim.range.normalize(anim.currentValue);
       }
     });
   }
@@ -125,6 +123,9 @@ export class AnimateFeature extends Feature {
     this.animations.push(animation);
     Object.defineProperty(obj, property, {
       get: function () {
+        if (animation.range) {
+          return animation.range.normalize(animation.currentValue);
+        }
         return animation.currentValue;
       },
       set: function (value) {
@@ -147,6 +148,7 @@ export class AnimateFeature extends Feature {
         animation.progress = 0;
       },
     });
+    return animation;
   }
 
   // deno-lint-ignore no-explicit-any
@@ -163,10 +165,15 @@ export class AnimateFeature extends Feature {
       endValue: obj[property],
       speed: opts.speed,
       progress: 1,
+      range: opts.range,
+      reachingThreshold: opts.reachingThreshold,
     };
     this.animations.push(animation);
     Object.defineProperty(obj, property, {
       get: function () {
+        if (animation.range) {
+          return animation.range.normalize(animation.currentValue);
+        }
         return animation.currentValue;
       },
       set: function (value) {
@@ -175,6 +182,7 @@ export class AnimateFeature extends Feature {
         animation.progress = 0;
       },
     });
+    return animation;
   }
 
   // deno-lint-ignore no-explicit-any

@@ -12,6 +12,7 @@ export class NumRange {
   }
 
   normalize(value: number): number {
+    while (value < this.min) value += this.size;
     return this.min + (value - this.min) % this.size;
   }
 }
