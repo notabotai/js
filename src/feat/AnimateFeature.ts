@@ -1,4 +1,5 @@
 import { App, Feature } from "../App.ts";
+import { NumRange } from "../geom/NumRange.ts";
 
 type AnimBase = {
   // deno-lint-ignore no-explicit-any
@@ -8,6 +9,7 @@ type AnimBase = {
   endValue: number;
   currentValue: number;
   progress: number;
+  range?: NumRange;
 };
 type Anim = AnimBase &
   (
@@ -32,6 +34,7 @@ type AnimOpts = {
   easing?: EasingFn;
   randomDelay?: number;
   delay?: number;
+  range?: NumRange;
 };
 
 type EasingFn = (t: number) => number;
@@ -79,9 +82,7 @@ export class AnimateFeature extends Feature {
         } else {
           anim.progress = Math.min(timeElapsed / duration, 1);
           const easingFn = easing || Easing.linear;
-          const value =
-            startValue + (endValue - startValue) * easingFn(anim.progress);
-          anim.currentValue = value;
+          anim.currentValue = startValue + (endValue - startValue) * easingFn(anim.progress);
         }
       } else if (anim.type === "bySpeed") {
         const { currentValue, endValue, speed } = anim;
@@ -90,6 +91,9 @@ export class AnimateFeature extends Feature {
         } else {
           anim.currentValue = currentValue + speed * (endValue - currentValue);
         }
+      }
+      if (anim.range !== undefined) {
+        anim.currentValue = anim.range.normalize(anim.currentValue);
       }
     });
   }
@@ -116,6 +120,7 @@ export class AnimateFeature extends Feature {
       currentValue: obj[property],
       progress: 1,
       easing: opts.easing,
+      range: opts.range,
     };
     this.animations.push(animation);
     Object.defineProperty(obj, property, {
