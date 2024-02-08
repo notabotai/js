@@ -1,4 +1,4 @@
-import { App, Feature } from "../App.ts";
+import { Feature } from "../App.ts";
 
 type PaletteName = "pastel";
 type Palette = {
@@ -112,16 +112,4 @@ export class PaletteFeature extends Feature {
     },
   };
   colors: Palette = this.options[this.chosen];
-
-  constructor(app: App, name: string) {
-    super(app, name);
-    this.settings
-      .add(this, "chosen", Object.keys(this.options))
-      .onChange((paletteName: PaletteName) => this.set(paletteName));
-  }
-
-  set(paletteName: PaletteName) {
-    this.chosen = paletteName;
-    this.colors = this.options[this.chosen];
-  }
 }

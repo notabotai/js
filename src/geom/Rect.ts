@@ -12,32 +12,41 @@ export class Rect {
   bottomLeft: Point;
   topRight: Point;
   parent: Rect | null = null;
+
   constructor(bottomLeft: Point, topRight: Point, parent: MaybeRect = null) {
     this.bottomLeft = bottomLeft;
     this.topRight = topRight;
     this.parent = parent;
   }
+
   static from(bottomLeft: Point, topRight: Point, parent: MaybeRect = null) {
     return new Rect(bottomLeft, topRight, parent);
   }
+
   static zero() {
     return new Rect(Point.zero(), Point.zero());
   }
+
   static unit() {
     return new Rect(Point.zero(), new Point(1, 1));
   }
+
   static fromXY(x: number, y: number) {
     return new Rect(new Point(x, y), new Point(x, y));
   }
+
   static fromX2Y2(x1: number, y1: number, x2: number, y2: number) {
     return new Rect(new Point(x1, y1), new Point(x2, y2));
   }
+
   static fromScalar(s: number) {
     return new Rect(new Point(s, s), new Point(s, s));
   }
+
   static fromPoint(point: Point) {
     return new Rect(Point.zero(), point.clone());
   }
+
   hStack(widths: number[], margin: MaybeRect = null, spacing = 0) {
     const rects: Rect[] = [];
     const { left, right, top, bottom } = this.withMargin(margin);
@@ -51,6 +60,7 @@ export class Rect {
     }
     return rects;
   }
+
   hStackEqual(count: number, margin: MaybeRect = null) {
     const rects: Rect[] = [];
     const { left, right, top, bottom } = this.withMargin(margin);
@@ -64,6 +74,7 @@ export class Rect {
     }
     return rects;
   }
+
   vStack(heights: number[], margin: MaybeRect = null, spacing = 0) {
     const rects: Rect[] = [];
     const { left, right, top, bottom } = this.withMargin(margin);
@@ -76,6 +87,7 @@ export class Rect {
     }
     return rects;
   }
+
   vStackEqual(count: number, margin: MaybeRect = null) {
     const rects: Rect[] = [];
     const { left, right, top, bottom } = this.withMargin(margin);
@@ -89,6 +101,7 @@ export class Rect {
     }
     return rects;
   }
+
   withMargin(margin: MaybeRect) {
     if (!margin) {
       return this;
@@ -98,58 +111,73 @@ export class Rect {
       this.topRight.clone().subtract(margin.topRight)
     );
   }
+
   withMarginXY(x: number, y: number) {
     return new Rect(
       this.bottomLeft.clone().addXY(x, y),
       this.topRight.clone().subtractXY(x, y)
     );
   }
+
   withMarginAll(margin: number) {
     return this.withMarginXY(margin, margin);
   }
+
   get width() {
     return this.topRight.x - this.bottomLeft.x;
   }
+
   get height() {
     return this.topRight.y - this.bottomLeft.y;
   }
+
   get center() {
     return new Point(
       (this.bottomLeft.x + this.topRight.x) / 2,
       (this.bottomLeft.y + this.topRight.y) / 2
     );
   }
+
   get bottom() {
     return this.bottomLeft.y;
   }
+
   get top() {
     return this.topRight.y;
   }
+
   get left() {
     return this.bottomLeft.x;
   }
+
   get right() {
     return this.topRight.x;
   }
+
   get aspectRatio() {
     return this.width / this.height;
   }
+
   get size() {
     return new Point(this.width, this.height);
   }
+
   clone() {
     return new Rect(this.bottomLeft.clone(), this.topRight.clone());
   }
+
   scale(s: number) {
     this.bottomLeft.scale(s);
     this.topRight.scale(s);
     return this;
   }
+
   scaleX(s: number) {
     this.bottomLeft.x *= s;
     this.topRight.x *= s;
     return this;
   }
+
   intersect(rect: Rect) {
     this.bottomLeft.setXY(
       Math.max(this.bottomLeft.x, rect.bottomLeft.x),
@@ -161,6 +189,7 @@ export class Rect {
     );
     return this;
   }
+
   contains(point: Point) {
     return (
       point.x >= this.bottomLeft.x &&
@@ -169,20 +198,24 @@ export class Rect {
       point.y <= this.topRight.y
     );
   }
+
   translate(point: Point) {
     this.bottomLeft.add(point);
     this.topRight.add(point);
     return this;
   }
+
   translateY(y: number) {
     this.bottomLeft.y += y;
     this.topRight.y += y;
     return this;
   }
+
   moveCenterTo(point: Point) {
     this.translate(point.clone().subtract(this.center));
     return this;
   }
+
   moveCenterYTo(point: Point) {
     this.translateY(point.y - this.center.y);
     return this;

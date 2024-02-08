@@ -1,4 +1,4 @@
-import { App, Feature } from "../App.ts";
+import { Feature } from "../App.ts";
 import { Point } from "../geom/Point.ts";
 import { Rect } from "../geom/Rect.ts";
 
@@ -12,10 +12,6 @@ export class GridFeature extends Feature {
   cellSize = 0;
   bounds = Rect.zero();
   boundsMargin = Rect.zero();
-
-  constructor(app: App, name: string) {
-    super(app, name);
-  }
 
   override update() {
     this.setCanvasScale();

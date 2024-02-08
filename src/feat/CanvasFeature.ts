@@ -56,6 +56,7 @@ interface CanvasRayOpts {
   arrowColor: PaletteColor;
   length: number;
   fixedLineWidth: boolean;
+  rounded: boolean;
 }
 
 interface CanvasRectOpts {
@@ -385,6 +386,7 @@ export class CanvasFeature extends Feature {
       arrowColor = color,
       length = 0.8,
       fixedLineWidth = false,
+      rounded = false,
     }: Partial<CanvasRayOpts> = {}
   ) {
     this.drawLine(Line.fromRay(ray, length), {
@@ -394,6 +396,7 @@ export class CanvasFeature extends Feature {
       arrowSize,
       arrowColor,
       fixedLineWidth,
+      rounded,
     });
   }
 

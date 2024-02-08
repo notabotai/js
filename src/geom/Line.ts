@@ -16,11 +16,8 @@ export class Line {
   }
 
   static fromRay(ray: Ray, length: number) {
-    const endPosition = new Point(
-      ray.from.x + length * Math.cos(ray.angle),
-      ray.from.y + length * Math.sin(ray.angle)
-    );
-    return new Line(ray.from, endPosition);
+    const endPos = Point.fromAngle(ray.angle).scale(length).add(ray.from);
+    return new Line(ray.from, endPos);
   }
 
   midpoint() {
@@ -121,5 +118,11 @@ export class Line {
     const eqn1 = this.equation();
     const eqn2 = line.equation();
     return eqn1.intersectionWith(eqn2);
+  }
+
+  // https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line
+  signWith(c: Point) {
+    const { from: a, to: b } = this;
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) > 0;
   }
 }

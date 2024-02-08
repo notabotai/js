@@ -24,7 +24,11 @@ export class Point {
   }
 
   static fromAngle(angle: number) {
-    return new Point(Math.cos(angle), Math.sin(angle));
+    return Point.fromPolar(angle, 1);
+  }
+
+  static fromPolar(angle: number, len = 1) {
+    return new Point(len * Math.cos(angle), len * Math.sin(angle))
   }
 
   static zero() {
@@ -191,5 +195,4 @@ export class Point {
     const eqn = this.equationWithSlope(slope);
     return line.equation().intersectionWith(eqn);
   }
-
 }

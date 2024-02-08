@@ -1,4 +1,4 @@
-import { App, Feature } from "../App.ts";
+import { Feature } from "../App.ts";
 import { NumRange } from "../geom/NumRange.ts";
 
 type AnimBase = {
@@ -63,10 +63,6 @@ export class AnimateFeature extends Feature {
   animationDuration = 300;
   animationSpeed = 0.1;
   reachingThreshold = 0.01;
-
-  constructor(app: App, name: string) {
-    super(app, name);
-  }
 
   override update() {
     const app = this.app;
