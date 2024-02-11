@@ -1,4 +1,4 @@
-import { App, Feature } from "../App.ts";
+import { FeatureApp, Feature } from "../Feature.ts";
 
 /* reloadOnChange
  *
@@ -7,7 +7,7 @@ import { App, Feature } from "../App.ts";
 export class ReloadOnChangeFeature extends Feature {
   eventSource = new EventSource("/last-change");
 
-  constructor(app: App, name: string) {
+  constructor(app: FeatureApp, name: string) {
     super(app, name);
     if (app.debug.enabled) {
       this.eventSource.onmessage = () => {

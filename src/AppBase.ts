@@ -1,7 +1,8 @@
 /// <reference lib="dom" />
 
-import { Debug, DebugLogger } from "./Debug.ts";
+import { Debug } from "./Debug.ts";
 import { Settings } from "./Settings.ts";
+import { Feature, FeatureApp } from "./Feature.ts";
 
 import { PaletteFeature } from "./feat/PaletteFeature.ts";
 import { InputFeature } from "./feat/InputFeature.ts";
@@ -10,18 +11,14 @@ import { AnimateFeature } from "./feat/AnimateFeature.ts";
 import { CanvasFeature } from "./feat/CanvasFeature.ts";
 import { GridFeature } from "./feat/GridFeature.ts";
 
-import type dat from "./vendor/dat.gui-0.7.9.d.ts";
-
 /* app
  *
  * Main application object
  * Initialize the different features at the start of the application
  * Call the update function for each feature on each frame
  * Reset the state of the application at the end of each frame
- *
- * Call app.init() to start the application (see the end of this file)
  */
-export class App {
+export class AppBase implements FeatureApp {
   paused = false;
   frame = 0;
   browserTime = 0;
@@ -33,11 +30,11 @@ export class App {
   settings = new Settings(this.debug);
 
   palette = new PaletteFeature(this, "palette");
-  input = new InputFeature(this, "input");
+  canvas = new CanvasFeature(this, "canvas", this.palette);
+  input = new InputFeature(this, "input", this.canvas);
   reloadOnChange = new ReloadOnChangeFeature(this, "reloadOnChange");
   animate = new AnimateFeature(this, "animate");
-  canvas = new CanvasFeature(this, "canvas");
-  grid = new GridFeature(this, "grid");
+  grid = new GridFeature(this, "grid", this.canvas);
 
   constructor() {
     // requires app.settings.gui to have been initialized
@@ -75,20 +72,3 @@ export class App {
   }
 }
 
-export abstract class Feature {
-  name: string;
-  app: App;
-  debug: DebugLogger;
-  settings: dat.GUI;
-
-  constructor(app: App, name: string) {
-    this.app = app;
-    this.name = name;
-    this.app.features.push(this);
-    this.settings = this.app.settings.gui.addFolder(this.name);
-    this.debug = this.app.debug.getNamespace(this.name);
-  }
-
-  update(): void {}
-  reset(): void {}
-}

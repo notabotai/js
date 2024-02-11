@@ -1,5 +1,6 @@
-import { App, Feature } from "../App.ts";
+import { FeatureApp, Feature } from "../Feature.ts";
 import { Point } from "../geom/Point.ts";
+import { CanvasFeature } from "./CanvasFeature.ts";
 
 type InputPosition = {
   clientX: number;
@@ -38,6 +39,7 @@ export class InputFeature extends Feature {
   private _pointerUp: InputPointer = null;
   private pointerScreen = Point.zero();
 
+  canvas: CanvasFeature;
   pointer = Point.zero();
   dragStart: Point | null = null;
   dragDelta = Point.zero();
@@ -57,8 +59,9 @@ export class InputFeature extends Feature {
 
   // Save the keydown event as it happens,
   // for use by other features' update functions
-  constructor(app: App, name: string) {
+  constructor(app: FeatureApp, name: string, canvas: CanvasFeature) {
     super(app, name);
+    this.canvas = canvas;
     self.addEventListener("keydown", (e) => {
       const { altKey, code, ctrlKey, metaKey, shiftKey } = e;
       this._keyDown = { altKey, code, ctrlKey, metaKey, shiftKey };
@@ -79,10 +82,9 @@ export class InputFeature extends Feature {
   }
 
   override update() {
-    const { canvas } = this.app;
     if (this._pointerDown || this._pointerMove || this._pointerUp) {
       // Convert the pointer position from screen coordinates to canvas coordinates
-      canvas.setCanvasPointerFromScreenCoords(this.pointer, this.pointerScreen);
+      this.canvas.setCanvasPointerFromScreenCoords(this.pointer, this.pointerScreen);
     }
   }
 

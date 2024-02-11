@@ -1,4 +1,4 @@
-import { Feature } from "../App.ts";
+import { Feature } from "../Feature.ts";
 import { NumRange } from "../geom/NumRange.ts";
 
 type AnimBase = {

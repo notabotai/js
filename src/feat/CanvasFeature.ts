@@ -1,4 +1,4 @@
-import { App, Feature } from "../App.ts";
+import { FeatureApp, Feature } from "../Feature.ts";
 import { Point } from "../geom/Point.ts";
 import { Circle } from "../geom/Circle.ts";
 import { Arc } from "../geom/Arc.ts";
@@ -6,7 +6,7 @@ import { Line } from "../geom/Line.ts";
 import { Ray } from "../geom/Ray.ts";
 import { Rect } from "../geom/Rect.ts";
 import { Triangle } from "../geom/Triangle.ts";
-import { PaletteColor } from "./PaletteFeature.ts";
+import { PaletteFeature, PaletteColor } from "./PaletteFeature.ts";
 
 interface CanvasCircleOpts {
   color: PaletteColor;
@@ -94,8 +94,11 @@ export class CanvasFeature extends Feature {
   defaultScale = 5;
   scaleCancelRatio = 1;
 
-  constructor(app: App, name: string) {
+  palette: PaletteFeature;
+
+  constructor(app: FeatureApp, name: string, palette: PaletteFeature) {
     super(app, name);
+    this.palette = palette;
     this.el =
       document.querySelector<HTMLCanvasElement>("#canvas-el") ||
       document.createElement("canvas");
@@ -135,9 +138,8 @@ export class CanvasFeature extends Feature {
   }
 
   clear() {
-    const { palette } = this.app;
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.ctx.fillStyle = palette.colors.background;
+    this.ctx.fillStyle = this.palette.colors.background;
     this.ctx.fillRect(0, 0, this.width, this.height);
     this.setInvertedYDirection();
   }
@@ -223,7 +225,6 @@ export class CanvasFeature extends Feature {
     circle: Circle,
     { color = "black", fixedRadius = false }: Partial<CanvasCircleOpts> = {}
   ) {
-    const { palette } = this.app;
     this.ctx.beginPath();
     const radius = circle.radius * this.scaleFor(fixedRadius);
     this.ctx.arc(
@@ -233,7 +234,7 @@ export class CanvasFeature extends Feature {
       0,
       2 * Math.PI
     );
-    this.ctx.fillStyle = palette.colors[color];
+    this.ctx.fillStyle = this.palette.colors[color];
     this.ctx.fill();
   }
 
@@ -246,7 +247,6 @@ export class CanvasFeature extends Feature {
       fixedRadius = false,
     }: Partial<CanvasArcOpts> = {}
   ) {
-    const { palette } = this.app;
     this.ctx.beginPath();
     this.ctx.lineWidth =
       lineWidth * this.unitScale * this.scaleFor(fixedLineWidth);
@@ -258,7 +258,7 @@ export class CanvasFeature extends Feature {
       arc.startAngle,
       arc.endAngle
     );
-    this.ctx.strokeStyle = palette.colors[color];
+    this.ctx.strokeStyle = this.palette.colors[color];
     this.ctx.stroke();
   }
 
@@ -273,7 +273,7 @@ export class CanvasFeature extends Feature {
     this.ctx.beginPath();
     const r = radius * this.scaleFor(fixedRadius);
     this._drawPoint(point, r);
-    this.ctx.fillStyle = this.app.palette.colors[color];
+    this.ctx.fillStyle = this.palette.colors[color];
     this.ctx.fill();
   }
 
@@ -285,11 +285,10 @@ export class CanvasFeature extends Feature {
       fixedRadius = false,
     }: Partial<CanvasPointOpts> = {}
   ) {
-    const { palette } = this.app;
     const r = radius * this.scaleFor(fixedRadius);
     this.ctx.beginPath();
     points.forEach((point: Point) => this._drawPoint(point, r));
-    this.ctx.fillStyle = palette.colors[color];
+    this.ctx.fillStyle = this.palette.colors[color];
     this.ctx.fill();
   }
 
@@ -312,12 +311,11 @@ export class CanvasFeature extends Feature {
       fixedSize = false,
     }: Partial<CanvasTextOpts> = {}
   ) {
-    const { palette } = this.app;
     this.ctx.textAlign = align;
     this.ctx.textBaseline = baseline;
     const fontSize = size * this.unitScale * this.scaleFor(fixedSize);
     this.ctx.font = `${fontSize}px ${font}`;
-    this.ctx.fillStyle = palette.colors[color];
+    this.ctx.fillStyle = this.palette.colors[color];
     this.ctx.fillText(text, pos.x * this.unitScale, pos.y * this.unitScale);
   }
 
@@ -334,7 +332,6 @@ export class CanvasFeature extends Feature {
       fixedLineWidth = false,
     }: Partial<CanvasLineOpts> = {}
   ) {
-    const { palette } = this.app;
     this.ctx.beginPath();
     const arrowWidth =
       arrowSize * this.unitScale * this.scaleFor(fixedLineWidth);
@@ -345,7 +342,7 @@ export class CanvasFeature extends Feature {
     this.ctx.lineCap = rounded ? "round" : "butt";
     this.ctx.moveTo(l.from.x, l.from.y);
     this.ctx.lineTo(l.to.x, l.to.y);
-    this.ctx.strokeStyle = palette.colors[color];
+    this.ctx.strokeStyle = this.palette.colors[color];
     if (arrowColor !== color) {
       this.ctx.stroke();
       this.ctx.beginPath();
@@ -372,7 +369,7 @@ export class CanvasFeature extends Feature {
         l.to.y + arrowWidth * Math.sin(angle - (Math.PI * 3) / 4)
       );
     }
-    this.ctx.strokeStyle = palette.colors[arrowColor];
+    this.ctx.strokeStyle = this.palette.colors[arrowColor];
     this.ctx.stroke();
   }
 
@@ -412,7 +409,6 @@ export class CanvasFeature extends Feature {
       dashed = false,
     }: Partial<CanvasRectOpts> = {}
   ) {
-    const { palette } = this.app;
     this.ctx.beginPath();
     this.ctx.lineWidth =
       lineWidth * this.unitScale * this.scaleFor(fixedLineWidth);
@@ -438,12 +434,12 @@ export class CanvasFeature extends Feature {
       if (dashed) {
         this.ctx.setLineDash([lineWidth * this.unitScale * 2]);
       }
-      this.ctx.strokeStyle = palette.colors[color];
+      this.ctx.strokeStyle = this.palette.colors[color];
       this.ctx.stroke();
       this.ctx.setLineDash([]);
     }
     if (fill) {
-      this.ctx.fillStyle = palette.colors[fillColor];
+      this.ctx.fillStyle = this.palette.colors[fillColor];
       this.ctx.fill();
     }
   }
@@ -456,7 +452,6 @@ export class CanvasFeature extends Feature {
     triangle: Triangle,
     { color = "black" }: Partial<CanvasTriangleOpts> = {}
   ) {
-    const { palette } = this.app;
     this.ctx.beginPath();
     this.ctx.moveTo(
       triangle.a.x * this.unitScale,
@@ -471,7 +466,7 @@ export class CanvasFeature extends Feature {
       triangle.c.y * this.unitScale
     );
     this.ctx.closePath();
-    this.ctx.fillStyle = palette.colors[color];
+    this.ctx.fillStyle = this.palette.colors[color];
     this.ctx.fill();
   }
 
@@ -479,8 +474,7 @@ export class CanvasFeature extends Feature {
     bounds: Rect,
     { lineWidth = 0.02, fixedLineWidth = false }: Partial<CanvasGridOpts> = {}
   ) {
-    const { palette } = this.app;
-    this.ctx.strokeStyle = palette.colors.divider;
+    this.ctx.strokeStyle = this.palette.colors.divider;
     this.ctx.lineWidth =
       lineWidth * this.unitScale * this.scaleFor(fixedLineWidth);
     this.ctx.beginPath();

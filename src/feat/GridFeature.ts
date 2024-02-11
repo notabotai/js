@@ -1,6 +1,8 @@
-import { Feature } from "../App.ts";
+import { FeatureApp, Feature } from "../Feature.ts";
 import { Point } from "../geom/Point.ts";
 import { Rect } from "../geom/Rect.ts";
+
+import { CanvasFeature } from "./CanvasFeature.ts";
 
 /* grid
  *
@@ -13,19 +15,25 @@ export class GridFeature extends Feature {
   bounds = Rect.zero();
   boundsMargin = Rect.zero();
 
+  canvas: CanvasFeature;
+
+  constructor(app: FeatureApp, name: string, canvas: CanvasFeature) {
+    super(app, name);
+    this.canvas = canvas;
+  }
+
   override update() {
     this.setCanvasScale();
     this.setBounds();
   }
 
   setCanvasScale() {
-    const { canvas } = this.app;
-    const { width, height } = canvas;
+    const { width, height } = this.canvas;
     const cellSizeX = width / this.minCells.x;
     const cellSizeY = height / this.minCells.y;
     this.cellSize = Math.min(cellSizeX, cellSizeY);
     this.cells.setXY(width, height).scale(1 / this.cellSize);
-    canvas.setScale(this.cellSize);
+    this.canvas.setScale(this.cellSize);
   }
 
   setBounds() {
