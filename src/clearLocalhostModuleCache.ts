@@ -1,16 +1,17 @@
 import { readJson } from "./readJson.ts";
+import { run } from "./run.ts";
 
 type DenoLockfile = {
   remote: Record<string, string>;
 };
+export type CacheReloadOpts = {
+  lockfilePath: string;
+  rootSourceFile: string;
+};
 
-const textDecoder = new TextDecoder();
-
-export async function clearLocalhostModuleCache({
-  lockfilePath = Deno.cwd() + "/deno.lock",
-  rootSourceFile = Deno.cwd() + "/src/app.ts",
-} = {}) {
-  const lockJson = await readJson<DenoLockfile>(lockfilePath);
+export async function clearLocalhostModuleCache(opts: CacheReloadOpts) {
+  const lockJson = await readJson<DenoLockfile>(opts.lockfilePath);
+  // console.log("lockJson", lockJson);
   if (!lockJson) return;
   let hasLocalhostModules = false;
   Object.keys(lockJson.remote).forEach((key) => {
@@ -20,16 +21,8 @@ export async function clearLocalhostModuleCache({
     }
   });
   if (!hasLocalhostModules) return;
+  // console.log("writing new lockJson", lockJson);
   Deno.writeTextFileSync("./deno.lock", JSON.stringify(lockJson, null, 2));
 
-  const { code, stdout, stderr } = await new Deno.Command(Deno.execPath(), {
-    args: ["cache", "--reload", rootSourceFile],
-    stdout: "piped",
-    stderr: "piped",
-  }).output();
-  if (code !== 0) {
-    console.log("cache reload stdout:", textDecoder.decode(stdout));
-    console.error("cache reload stderr:", textDecoder.decode(stderr));
-    return;
-  }
+  return await run("cache", "--reload", opts.rootSourceFile);
 }

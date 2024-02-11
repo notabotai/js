@@ -1,19 +1,41 @@
 import { isProd, routes, HttpResponse } from "./serveHttpRequests.ts";
-import { clearLocalhostModuleCache } from "./clearLocalhostModuleCache.ts";
+import { clearLocalhostModuleCache, CacheReloadOpts } from "./clearLocalhostModuleCache.ts";
+import { run } from "./run.ts";
 
 export const openConnections: ReadableStreamDefaultController[] = [];
 
-const textDecoder = new TextDecoder();
+type WatchDevDirsOpts = {
+  dirs: string[];
+  bundle: [string, string] | false;
+  testDir: string | false;
+  cacheReload: CacheReloadOpts;
+}
+type OnFileChangeOpts = WatchDevDirsOpts & {
+  path: string;
+  time: Date;
+};
+
+const defaultWatchOpts: WatchDevDirsOpts = {
+  dirs: ["src"],
+  bundle: ["src/app.ts", "public/app.js"],
+  testDir: "src",
+  cacheReload: {
+    lockfilePath: "deno.lock",
+    rootSourceFile: "src/app.ts",
+  },
+};
 
 // change in src/ -> deno bundle src/app.ts public/app.js -> browser reload
-export function watchDevDirs({
-  dirs = ["src"],
-  bundle = ["src/app.ts", "public/app.js"],
-} = {}) {
+export async function watchDevDirs(opts: WatchDevDirsOpts = defaultWatchOpts) {
   if (isProd) return;
 
+  await clearLocalhostModuleCache(opts.cacheReload);
+  await run("check", opts.cacheReload.rootSourceFile);
+  if (opts.testDir) await run("test", "--unstable", opts.testDir);
+  if (opts.bundle) await run("bundle", opts.bundle[0], opts.bundle[1]);
+
   let timeout: number | undefined;
-  for (const dir of dirs) {
+  for (const dir of opts.dirs) {
     try {
       watchDir(dir);
     } catch (err) {
@@ -41,65 +63,48 @@ export function watchDevDirs({
 
   async function watchDir(dir: string) {
     for await (const event of Deno.watchFs(dir, { recursive: true })) {
-      clearTimeout(timeout);
-      timeout = setTimeout(onFileChange, 100, {
-        dir,
-        event,
-        time: new Date(),
-        bundle,
-      });
+      const isTs = event.paths[0].endsWith(".ts");
+      const isChange = event.kind === "create" || event.kind === "modify";
+      if (isChange && isTs) {
+        const path = event.paths[0].replace(Deno.cwd() + "/", "");
+        clearTimeout(timeout);
+        timeout = setTimeout(onFileChange, 100, {
+          ...opts,
+          path,
+          time: new Date(),
+        });
+      }
     }
   }
 }
 
 async function onFileChange({
-  dir,
-  event,
+  path,
   time,
   bundle,
-}: {
-  dir: string;
-  event: Deno.FsEvent;
-  time: Date;
-  bundle: string[];
-}) {
-  console.log(
-    `[${time.toLocaleTimeString()}] ${event.kind} ${dir} ${event.paths[0]}`
-  );
+  // testDir,
+  cacheReload,
+}: OnFileChangeOpts) {
+  console.log(`[${time.toLocaleTimeString()}] updated ${path}`);
 
-  await clearLocalhostModuleCache();
+  // clear deno module cache
+  await clearLocalhostModuleCache(cacheReload);
 
   // check types
-  if (event.paths[0].endsWith(".ts")) {
-    const { code, stdout, stderr } = await new Deno.Command(Deno.execPath(), {
-      args: ["check", event.paths[0]],
-      stdout: "piped",
-      stderr: "piped",
-    }).output();
-    if (code !== 0) {
-      console.log("typecheck stdout:", textDecoder.decode(stdout));
-      console.error("typecheck stderr:", textDecoder.decode(stderr));
-      return;
-    }
-  }
+  if (await run("check", path)) return;
 
-  // If file is .ts then run deno bundle on it
-  if (bundle.length) {
-    const { code, stdout, stderr } = await new Deno.Command(Deno.execPath(), {
-      args: ["bundle", bundle[0], bundle[1]],
-      stdout: "piped",
-      stderr: "piped",
-    }).output();
-    console.log("bundle stdout:", textDecoder.decode(stdout));
-    console.error("bundle stderr:", textDecoder.decode(stderr));
-    if (code !== 0) {
-      return;
-    }
-  }
+  // run tests
+  if (path.endsWith(".test.ts") &&
+      await run("test", "--unstable", path)) return;
 
+  // bundle
+  if (bundle && await run("bundle", bundle[0], bundle[1])) return;
+
+  // notify open browser connections
   openConnections.forEach((connection) => {
     connection.enqueue(
       new TextEncoder().encode(`data: ${time.getTime()}\r\n\r\n`)
     );
   });
 }
+
