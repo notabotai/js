@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 import { Point } from "./geom/Point.ts";
 
 type DebugValue = object | number | string | boolean | undefined;
@@ -18,13 +20,16 @@ type Stringifier = (value: DebugValue) => string | undefined;
  * Press Alt+P to show the pose data in the console
  */
 export class Debug {
-  el = document.querySelector<HTMLElement>("#debug-el");
+  el: HTMLElement | null = null;
   lines: string[] = [];
   loggedValues: { [key: string]: string } = {};
   enabled = false;
   hasBreakpoint = false;
 
   constructor() {
+    if (typeof document !== "undefined") {
+      this.el = document.querySelector<HTMLElement>("#debug-el");
+    }
     this.enabled = this.getQueryParam("debug") === "true";
   }
 
@@ -56,7 +61,7 @@ export class Debug {
   }
 
   getQueryParam(name: string) {
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(window.location?.search);
     return urlParams.get(name);
   }
 

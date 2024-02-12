@@ -5,13 +5,16 @@ import { FeatureApp, Feature } from "../Feature.ts";
  * Reload the page when server detects a change in the source code, only in dev mode
  */
 export class ReloadOnChangeFeature extends Feature {
-  eventSource = new EventSource("/last-change");
+  eventSource: EventSource | null = null;
 
   constructor(app: FeatureApp, name: string) {
     super(app, name);
-    if (app.debug.enabled) {
+    if (typeof document !== "undefined") {
+      this.eventSource = new EventSource("/last-change");
+    }
+    if (this.eventSource && app.debug.enabled) {
       this.eventSource.onmessage = () => {
-        this.eventSource.close();
+        this.eventSource?.close();
         window.location.reload();
       };
     }

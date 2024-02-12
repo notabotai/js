@@ -65,7 +65,9 @@ export class AppBase implements FeatureApp {
         feature.reset();
       }
       this.debug.flush();
-      return setTimeout(updateLoop, frameDelay);
+      if (typeof document !== "undefined") {
+        return setTimeout(updateLoop, frameDelay);
+      }
     };
 
     updateLoop();

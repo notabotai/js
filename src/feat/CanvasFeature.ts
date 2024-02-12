@@ -7,6 +7,7 @@ import { Ray } from "../geom/Ray.ts";
 import { Rect } from "../geom/Rect.ts";
 import { Triangle } from "../geom/Triangle.ts";
 import { PaletteFeature, PaletteColor } from "./PaletteFeature.ts";
+import { MockHTMLCanvasElement, MockCanvasRenderingContext2D } from "../mocks/MockHTML.ts";
 
 interface CanvasCircleOpts {
   color: PaletteColor;
@@ -84,8 +85,8 @@ interface CanvasGridOpts {
  * Manage the canvas element where the game is rendered
  */
 export class CanvasFeature extends Feature {
-  el: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
+  el: HTMLCanvasElement | MockHTMLCanvasElement;
+  ctx: CanvasRenderingContext2D | MockCanvasRenderingContext2D;
   width = 0;
   height = 0;
   scale = 1;
@@ -99,12 +100,12 @@ export class CanvasFeature extends Feature {
   constructor(app: FeatureApp, name: string, palette: PaletteFeature) {
     super(app, name);
     this.palette = palette;
-    this.el =
-      document.querySelector<HTMLCanvasElement>("#canvas-el") ||
-      document.createElement("canvas");
-    if (this.el.parentElement === null) {
-      this.el.id = "canvas-el";
-      document.body.appendChild(this.el);
+    if (typeof document !== "undefined") {
+      this.el =
+        document.querySelector<HTMLCanvasElement>("#canvas-el") ||
+        document.createElement("canvas");
+    } else {
+      this.el = new MockHTMLCanvasElement();
     }
     this.ctx = this.el.getContext("2d")!;
 
@@ -123,7 +124,7 @@ export class CanvasFeature extends Feature {
   }
 
   override update() {
-    if (this.toResizeNextFrame) {
+    if (this.el !== null && this.toResizeNextFrame) {
       this.el.width = this.width;
       this.el.height = this.height;
       this.toResizeNextFrame = false;
@@ -138,6 +139,7 @@ export class CanvasFeature extends Feature {
   }
 
   clear() {
+    if (!this.ctx) return;
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.fillStyle = this.palette.colors.background;
     this.ctx.fillRect(0, 0, this.width, this.height);
@@ -149,6 +151,7 @@ export class CanvasFeature extends Feature {
   }
 
   setCenteredCoordinates() {
+    if (!this.ctx) return;
     this.setInvertedYDirection();
     const fillText = this.ctx.fillText;
     this.ctx.fillText = (text: string, x: number, y: number) => {
@@ -159,6 +162,7 @@ export class CanvasFeature extends Feature {
   }
 
   setSize() {
+    if (this.el === null) return;
     // important to set the width and height of the canvas element itself
     // (this.el.width and this.el.height)
     // otherwise the canvas will remain 300x150 pixels and rescaled by CSS
@@ -199,6 +203,7 @@ export class CanvasFeature extends Feature {
   }
 
   setCanvasPointerFromScreenCoords(point: Point, screenPoint: Point) {
+    if (this.el === null) return;
     const rect = this.el.getBoundingClientRect();
     const dpr = window.devicePixelRatio;
     const scale = this.scale * this.unitScale;
