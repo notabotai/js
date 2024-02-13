@@ -31,7 +31,7 @@ export async function watchDevDirs(opts: WatchDevDirsOpts = defaultWatchOpts) {
 
   await clearLocalhostModuleCache(opts.cacheReload);
   await run("check", opts.cacheReload.rootSourceFile);
-  if (opts.testDir) await run("test", "--unstable", "--dom", opts.testDir);
+  if (opts.testDir) await run("test", "--unstable", opts.testDir);
   if (opts.bundle) await run("bundle", opts.bundle[0], opts.bundle[1]);
 
   let timeout: number | undefined;
@@ -95,7 +95,7 @@ async function onFileChange({
 
   // run tests
   if (path.endsWith(".test.ts") &&
-      await run("test", "--unstable", "--dom", path)) return;
+      await run("test", "--unstable", path)) return;
 
   // bundle
   if (bundle && await run("bundle", bundle[0], bundle[1])) return;

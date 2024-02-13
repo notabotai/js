@@ -109,10 +109,11 @@ export async function serveHttpRequests({
         file = await Deno.open(publicDir + route, { read: true });
       }
     } catch {
-      console.log("404", route);
+      console.log("static file not found in", Deno.cwd(), "/", publicDir, "for", route);
       return response404;
     }
     if (file && route.endsWith(".js")) {
+      // typesFile is useful for deno import statement importing a compiled .js file
       try {
         typesFile = await Deno.open(
           publicDir + route.replace(/\.js$/, ".d.ts"),
@@ -152,7 +153,7 @@ export async function serveHttpRequests({
       return new HttpResponse(file.readable, headers);
     }
 
-    console.log("404", route);
+    console.log("no handler for", route, "with cwd", Deno.cwd());
     return response404;
   }
 }
