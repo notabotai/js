@@ -96,7 +96,6 @@ export async function serveHttpRequests({
       if (content) {
         return new HttpResponse(content, defaultHeaders);
       }
-      return response404;
     }
 
     // static files
@@ -112,7 +111,6 @@ export async function serveHttpRequests({
       }
     } catch {
       console.log("static file not found in", Deno.cwd(), "/", publicDir, "for", route);
-      return response404;
     }
     if (file && route.endsWith(".js")) {
       // typesFile is useful for deno import statement importing a compiled .js file
