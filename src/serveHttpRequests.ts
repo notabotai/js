@@ -7,7 +7,9 @@ export const isProd = Deno.env.get("DENO_DEPLOYMENT_ID") !== undefined;
 type HttpHeaders = Record<string, string>;
 type HttpContent = string | ReadableStream<Uint8Array>;
 type RouteHandler = (
-  requestEvent: Deno.RequestEvent
+  requestEvent: Deno.RequestEvent,
+  url?: URL,
+  route?: string
 ) => Promise<HttpResponse> | HttpResponse;
 type DenoConfig = {
   imports: Record<string, string>;
@@ -39,6 +41,7 @@ export async function serveHttpRequests({
   port = Deno.env.get("PORT") ?? 8000,
   publicDir = "public",
   githubRepo = "notabotai/js",
+  defaultRoute = "",
 } = {}) {
   for await (const conn of Deno.listen({ port: +port })) {
     handleConn(conn).catch((err) => {
@@ -59,15 +62,14 @@ export async function serveHttpRequests({
   }
 
   async function handleRequest(requestEvent: Deno.RequestEvent) {
-    sendResponse(requestEvent, await getResponse(requestEvent)).catch((err) => {
+    const url = new URL(requestEvent.request.url);
+    const route = decodeURIComponent(url.pathname);
+    sendResponse(requestEvent, await getResponse(requestEvent, url, route)).catch((err) => {
       console.error("sendResponse failure", err);
     });
   }
 
-  async function getResponse(requestEvent: Deno.RequestEvent) {
-    const url = new URL(requestEvent.request.url);
-    let route = decodeURIComponent(url.pathname);
-
+  async function getResponse(requestEvent: Deno.RequestEvent, url: URL, route: string) {
     const defaultHeaders: HttpHeaders = {
       "Content-Type": getMimeType(route.split(".").pop()),
       "Access-Control-Allow-Origin": "*",
@@ -151,6 +153,11 @@ export async function serveHttpRequests({
         headers["X-TypeScript-Types"] = route.replace(/\.js$/, ".d.ts");
       }
       return new HttpResponse(file.readable, headers);
+    }
+
+    if (defaultRoute) {
+      console.log("activating defaultRoute", defaultRoute);
+      return getResponse(requestEvent, url, defaultRoute);
     }
 
     console.log("no handler for", route, "with cwd", Deno.cwd());
