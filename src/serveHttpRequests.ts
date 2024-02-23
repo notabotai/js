@@ -5,7 +5,7 @@ export const routes = new Map<string, RouteHandler>();
 export const isProd = Deno.env.get("DENO_DEPLOYMENT_ID") !== undefined;
 
 type HttpHeaders = Record<string, string>;
-type HttpContent = string | ReadableStream<Uint8Array>;
+type HttpContent = string | ReadableStream<Uint8Array> | null;
 type RouteHandler = (
   requestEvent: Deno.RequestEvent,
   url?: URL,
@@ -42,6 +42,8 @@ export async function serveHttpRequests({
   publicDir = "public",
   githubRepo = "notabotai/js",
   defaultRoute = "",
+  etag = (_route: string): string => "",
+  cacheControl = (_route: string): string => "",
 } = {}) {
   for await (const conn of Deno.listen({ port: +port })) {
     handleConn(conn).catch((err) => {
@@ -65,7 +67,7 @@ export async function serveHttpRequests({
     const url = new URL(requestEvent.request.url);
     const route = decodeURIComponent(url.pathname);
     sendResponse(requestEvent, await getResponse(requestEvent, url, route)).catch((err) => {
-      console.error("sendResponse failure", err);
+      console.error(`sendResponse failure for ${route}`, err);
     });
   }
 
@@ -76,6 +78,25 @@ export async function serveHttpRequests({
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE",
       "Access-Control-Allow-Headers": "Content-Type",
     };
+
+    // handle etag for better caching control by user app
+    const etagValue = etag(route);
+    if (etagValue) {
+      defaultHeaders.ETag = etagValue;
+      const ifNoneMatch = requestEvent.request.headers.get("if-none-match");
+      if (ifNoneMatch === etagValue || ifNoneMatch === `W/"${etagValue}"`) {
+        console.log("etag match", route, etagValue, ifNoneMatch);
+        return new HttpResponse(null, defaultHeaders, 304);
+      } else {
+        console.log("etag mismatch", route, etagValue, ifNoneMatch);
+      }
+    }
+
+    // cache control
+    const cacheControlValue = cacheControl(route);
+    if (cacheControlValue) {
+      defaultHeaders["Cache-Control"] = cacheControlValue;
+    }
 
     // defined routes
     if (routes.has(route)) {
@@ -197,6 +218,8 @@ function getMimeType(fileExt: string | undefined) {
       return "text/plain";
     case "md":
       return "text/markdown";
+    case "wasm":
+      return "application/wasm";
     case undefined:
       return "text/plain";
     default:
