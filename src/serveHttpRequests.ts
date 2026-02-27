@@ -9,7 +9,7 @@ type HttpContent = string | ReadableStream<Uint8Array> | null;
 type RouteHandler = (
   requestEvent: Deno.RequestEvent,
   url?: URL,
-  route?: string
+  route?: string,
 ) => Promise<HttpResponse> | HttpResponse;
 type DenoConfig = {
   imports: Record<string, string>;
@@ -29,12 +29,12 @@ export class HttpResponse {
 const response404: HttpResponse = new HttpResponse(
   "404 Not Found",
   { "Content-Type": "text/plain" },
-  404
+  404,
 );
 const response500: HttpResponse = new HttpResponse(
   "500 Internal Server Error",
   { "Content-Type": "text/plain" },
-  500
+  500,
 );
 
 export async function serveHttpRequests({
@@ -66,12 +66,17 @@ export async function serveHttpRequests({
   async function handleRequest(requestEvent: Deno.RequestEvent) {
     const url = new URL(requestEvent.request.url);
     const route = decodeURIComponent(url.pathname);
-    sendResponse(requestEvent, await getResponse(requestEvent, url, route)).catch((err) => {
-      console.error(`sendResponse failure for ${route}`, err);
-    });
+    sendResponse(requestEvent, await getResponse(requestEvent, url, route))
+      .catch((err) => {
+        console.error(`sendResponse failure for ${route}`, err);
+      });
   }
 
-  async function getResponse(requestEvent: Deno.RequestEvent, url: URL, route: string) {
+  async function getResponse(
+    requestEvent: Deno.RequestEvent,
+    url: URL,
+    route: string,
+  ) {
     const defaultHeaders: HttpHeaders = {
       "Content-Type": getMimeType(route.split(".").pop()),
       "Access-Control-Allow-Origin": "*",
@@ -111,7 +116,7 @@ export async function serveHttpRequests({
       console.log("github", route);
       const ghUrl = route.replace(
         "/gh/",
-        `https://raw.githubusercontent.com/${githubRepo}/`
+        `https://raw.githubusercontent.com/${githubRepo}/`,
       );
       const content = (await fetch(ghUrl)).body;
       if (content) {
@@ -119,26 +124,40 @@ export async function serveHttpRequests({
       }
     }
 
-    // static files
-    if (route === "/") {
-      route = "/index.html"; // default to index.html
+    // static files — resolve trailing-slash paths to index.html
+    if (route.endsWith("/")) {
+      route = route + "index.html";
       defaultHeaders["Content-Type"] = "text/html";
     }
     let file: Deno.FsFile | undefined;
     let typesFile: Deno.FsFile | undefined;
     try {
-      if ((await Deno.stat(publicDir + route)).isFile) {
+      const stat = await Deno.stat(publicDir + route);
+      if (stat.isDirectory) {
+        return new HttpResponse(null, {
+          ...defaultHeaders,
+          Location: route + "/",
+        }, 301);
+      }
+      if (stat.isFile) {
         file = await Deno.open(publicDir + route, { read: true });
       }
     } catch {
-      console.log("static file not found in", Deno.cwd(), "/", publicDir, "for", route);
+      console.log(
+        "static file not found in",
+        Deno.cwd(),
+        "/",
+        publicDir,
+        "for",
+        route,
+      );
     }
     if (file && route.endsWith(".js")) {
       // typesFile is useful for deno import statement importing a compiled .js file
       try {
         typesFile = await Deno.open(
           publicDir + route.replace(/\.js$/, ".d.ts"),
-          { read: true }
+          { read: true },
         );
       } catch {
         // no types known for this JS file
@@ -149,7 +168,7 @@ export async function serveHttpRequests({
     if (file && route.endsWith(".html")) {
       console.log("html", route);
       const denoConfig = await readJson<DenoConfig>("./deno.json");
-      const importDomain = denoConfig?.imports["js/"] || "";
+      const importDomain = denoConfig?.imports?.["js/"] || "";
       const reader = new BufReader(file);
       const encoder = new TextEncoder();
       const response = new ReadableStream({
@@ -186,7 +205,7 @@ export async function serveHttpRequests({
 
 async function sendResponse(
   requestEvent: Deno.RequestEvent,
-  response: HttpResponse
+  response: HttpResponse,
 ) {
   const { content, status, headers } = response;
   await requestEvent.respondWith(new Response(content, { status, headers }));
