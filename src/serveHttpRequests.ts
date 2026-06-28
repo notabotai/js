@@ -6,8 +6,13 @@ export const isProd = Deno.env.get("DENO_DEPLOYMENT_ID") !== undefined;
 
 type HttpHeaders = Record<string, string>;
 type HttpContent = string | ReadableStream<Uint8Array> | null;
+export type RequestEvent = {
+  request: Request;
+  respondWith: (response: Response) => Promise<void> | void;
+};
+
 type RouteHandler = (
-  requestEvent: Deno.RequestEvent,
+  requestEvent: RequestEvent,
   url?: URL,
   route?: string,
 ) => Promise<HttpResponse> | HttpResponse;
@@ -48,7 +53,7 @@ export async function serveHttpRequests({
   // Use Deno.serve (native; works on Classic, new Deploy, and locally) instead of
   // the deprecated Deno.listen + Deno.serveHttp. The new Deploy runtime only
   // completes warmup with Deno.serve. A small RequestEvent shim lets the existing
-  // route handlers (which receive a Deno.RequestEvent) work unchanged: respondWith
+  // route handlers (which receive a RequestEvent) work unchanged: respondWith
   // resolves the Response that Deno.serve returns.
   Deno.serve({ port: +port }, (request) => {
     return new Promise<Response>((resolve) => {
@@ -58,7 +63,7 @@ export async function serveHttpRequests({
           resolve(response);
           return Promise.resolve();
         },
-      } as Deno.RequestEvent;
+      } as RequestEvent;
       handleRequest(requestEvent).catch((err) => {
         console.error("handleRequest failure", err);
         sendResponse(requestEvent, response500).catch((e) => {
@@ -68,7 +73,7 @@ export async function serveHttpRequests({
     });
   });
 
-  async function handleRequest(requestEvent: Deno.RequestEvent) {
+  async function handleRequest(requestEvent: RequestEvent) {
     const url = new URL(requestEvent.request.url);
     const route = decodeURIComponent(url.pathname);
     sendResponse(requestEvent, await getResponse(requestEvent, url, route))
@@ -78,7 +83,7 @@ export async function serveHttpRequests({
   }
 
   async function getResponse(
-    requestEvent: Deno.RequestEvent,
+    requestEvent: RequestEvent,
     url: URL,
     route: string,
   ) {
@@ -209,7 +214,7 @@ export async function serveHttpRequests({
 }
 
 async function sendResponse(
-  requestEvent: Deno.RequestEvent,
+  requestEvent: RequestEvent,
   response: HttpResponse,
 ) {
   const { content, status, headers } = response;
