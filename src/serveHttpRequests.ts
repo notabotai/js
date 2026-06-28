@@ -45,23 +45,28 @@ export async function serveHttpRequests({
   etag = (_route: string): string => "",
   cacheControl = (_route: string): string => "",
 } = {}) {
-  for await (const conn of Deno.listen({ port: +port })) {
-    handleConn(conn).catch((err) => {
-      console.error("handleConn failure", err);
-    });
-  }
-
-  async function handleConn(conn: Deno.Conn) {
-    const httpConn = Deno.serveHttp(conn);
-    for await (const requestEvent of httpConn) {
+  // Use Deno.serve (native; works on Classic, new Deploy, and locally) instead of
+  // the deprecated Deno.listen + Deno.serveHttp. The new Deploy runtime only
+  // completes warmup with Deno.serve. A small RequestEvent shim lets the existing
+  // route handlers (which receive a Deno.RequestEvent) work unchanged: respondWith
+  // resolves the Response that Deno.serve returns.
+  Deno.serve({ port: +port }, (request) => {
+    return new Promise<Response>((resolve) => {
+      const requestEvent = {
+        request,
+        respondWith: (response: Response) => {
+          resolve(response);
+          return Promise.resolve();
+        },
+      } as Deno.RequestEvent;
       handleRequest(requestEvent).catch((err) => {
         console.error("handleRequest failure", err);
-        sendResponse(requestEvent, response500).catch((err) => {
-          console.error("sendResponse failure when sending 500", err);
+        sendResponse(requestEvent, response500).catch((e) => {
+          console.error("sendResponse failure when sending 500", e);
         });
       });
-    }
-  }
+    });
+  });
 
   async function handleRequest(requestEvent: Deno.RequestEvent) {
     const url = new URL(requestEvent.request.url);
