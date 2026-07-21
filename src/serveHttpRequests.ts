@@ -1,3 +1,7 @@
+// Keep the fully-qualified https: specifier rather than moving it into an import
+// map: this module is also fetched directly over HTTP (see the "/gh/" route
+// below), where a bare specifier would have no import map to resolve against.
+// deno-lint-ignore-file no-import-prefix
 import { BufReader, readLines } from "https://deno.land/std@0.212.0/io/mod.ts";
 import { readJson } from "./readJson.ts";
 
@@ -42,6 +46,10 @@ const response500: HttpResponse = new HttpResponse(
   500,
 );
 
+// Deliberately `async` with no `await` inside: Deno.serve returns immediately and
+// the server runs in the background. Dropping `async` would change this function's
+// return value from a Promise to undefined, which callers `await`.
+// deno-lint-ignore require-await
 export async function serveHttpRequests({
   port = Deno.env.get("PORT") ?? 8000,
   publicDir = "public",

@@ -1,6 +1,41 @@
 {
+  "//compilerOptions": [
+    "Deliberately empty, and it must stay present. tsconfig.json in this repo is",
+    "a leftover @tsconfig/strictest build config from the v1 commit (outDir",
+    "./public, rootDir ./src) — nothing runs tsc here any more, Deno is the only",
+    "toolchain. When deno.json declares no compilerOptions, Deno falls back to",
+    "reading tsconfig.json, which breaks the repo two ways: its",
+    "paths {\"*\": [\"node_modules/*\"]} hijacks even relative .ts imports (so",
+    "AppBase.ts cannot resolve ./feat/GridFeature.ts), and checkJs + the",
+    "strictest flags get applied to src/vendor/*.js. Declaring compilerOptions",
+    "here stops that fallback and puts type checking back on Deno's defaults —",
+    "which is exactly what consumers of this library already get, since they",
+    "resolve these modules over HTTP and never see this tsconfig.json."
+  ],
+  "compilerOptions": {},
   "tasks": {
-    "dev": "deno run --allow-net --allow-env=DENO_DEPLOYMENT_ID,PORT --allow-read --allow-write --allow-run --unstable --watch server.ts"
+    "dev": "deno run --allow-net --allow-env=DENO_DEPLOYMENT_ID,PORT --allow-read --allow-write --allow-run --unstable --watch server.ts",
+    "test": "deno test -A"
+  },
+  "//exclude": [
+    "src/vendor/ is vendored third-party source (canvas-confetti 1.9.2, dat.gui",
+    "0.7.9) — never hand-edited, so it is excluded from lint and check as well",
+    "as fmt."
+  ],
+  "exclude": [
+    "src/vendor/"
+  ],
+  "//lint": [
+    "no-window is disabled because most of this repo is browser code (Debug,",
+    "Settings, feat/*) that ships to a real browser, where `window` is the",
+    "correct global. The rule only warns because deno lint assumes a Deno",
+    "runtime. Rewriting these to globalThis would be an edit to shipped",
+    "library code for no benefit."
+  ],
+  "lint": {
+    "rules": {
+      "exclude": ["no-window"]
+    }
   },
   "fmt": {
     "exclude": [
