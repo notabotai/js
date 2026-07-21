@@ -1,4 +1,4 @@
-import { FeatureApp, Feature } from "../Feature.ts";
+import { Feature, FeatureApp } from "../Feature.ts";
 import { Point } from "../geom/Point.ts";
 import { Rect } from "../geom/Rect.ts";
 
@@ -38,10 +38,10 @@ export class GridFeature extends Feature {
 
   setBounds() {
     this.bounds.bottomLeft.set(
-      this.minCells.clone().scale(-0.5).add(this.boundsMargin.bottomLeft)
+      this.minCells.clone().scale(-0.5).add(this.boundsMargin.bottomLeft),
     );
     this.bounds.topRight.set(
-      this.minCells.clone().scale(0.5).subtract(this.boundsMargin.topRight)
+      this.minCells.clone().scale(0.5).subtract(this.boundsMargin.topRight),
     );
   }
 }

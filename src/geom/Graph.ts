@@ -1,4 +1,4 @@
-import { Point } from './Point.ts';
+import { Point } from "./Point.ts";
 
 export class Vertex {
   name: string;
@@ -30,13 +30,20 @@ export class Graph {
 
   constructor(vertices: Vertex[], edgeIndices: number[][]) {
     this.vertices = vertices;
-    this.edges = edgeIndices.map(([start, end]) => new Edge(vertices[start], vertices[end]));
+    this.edges = edgeIndices.map(([start, end]) =>
+      new Edge(vertices[start], vertices[end])
+    );
   }
 
   clone() {
     return new Graph(
-      this.vertices.map(vertex => vertex.clone()),
-      this.edges.map(edge => [this.vertices.indexOf(edge.start), this.vertices.indexOf(edge.end)])
+      this.vertices.map((vertex) => vertex.clone()),
+      this.edges.map(
+        (edge) => [
+          this.vertices.indexOf(edge.start),
+          this.vertices.indexOf(edge.end),
+        ],
+      ),
     );
   }
 }

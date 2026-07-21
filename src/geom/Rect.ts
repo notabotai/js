@@ -50,11 +50,11 @@ export class Rect {
   hStack(widths: number[], margin: MaybeRect = null, spacing = 0) {
     const rects: Rect[] = [];
     const { left, right, top, bottom } = this.withMargin(margin);
-    let x =
-      left + (right - left - (widths.length - 1) * spacing - sum(widths)) / 2;
+    let x = left +
+      (right - left - (widths.length - 1) * spacing - sum(widths)) / 2;
     for (const width of widths) {
       rects.push(
-        new Rect(new Point(x, bottom), new Point(x + width, top), this)
+        new Rect(new Point(x, bottom), new Point(x + width, top), this),
       );
       x += width + spacing;
     }
@@ -68,7 +68,7 @@ export class Rect {
     let x = left;
     for (let i = 0; i < count; i++) {
       rects.push(
-        new Rect(new Point(x, bottom), new Point(x + width, top), this)
+        new Rect(new Point(x, bottom), new Point(x + width, top), this),
       );
       x += width;
     }
@@ -81,7 +81,7 @@ export class Rect {
     let y = top - (top - bottom - sum(heights)) / 2;
     for (const height of heights) {
       rects.push(
-        new Rect(new Point(left, y - height), new Point(right, y), this)
+        new Rect(new Point(left, y - height), new Point(right, y), this),
       );
       y -= height + spacing;
     }
@@ -95,7 +95,7 @@ export class Rect {
     let y = bottom;
     for (let i = 0; i < count; i++) {
       rects.push(
-        new Rect(new Point(left, y), new Point(right, y + height), this)
+        new Rect(new Point(left, y), new Point(right, y + height), this),
       );
       y += height;
     }
@@ -108,14 +108,14 @@ export class Rect {
     }
     return new Rect(
       this.bottomLeft.clone().add(margin.bottomLeft),
-      this.topRight.clone().subtract(margin.topRight)
+      this.topRight.clone().subtract(margin.topRight),
     );
   }
 
   withMarginXY(x: number, y: number) {
     return new Rect(
       this.bottomLeft.clone().addXY(x, y),
-      this.topRight.clone().subtractXY(x, y)
+      this.topRight.clone().subtractXY(x, y),
     );
   }
 
@@ -134,7 +134,7 @@ export class Rect {
   get center() {
     return new Point(
       (this.bottomLeft.x + this.topRight.x) / 2,
-      (this.bottomLeft.y + this.topRight.y) / 2
+      (this.bottomLeft.y + this.topRight.y) / 2,
     );
   }
 
@@ -181,11 +181,11 @@ export class Rect {
   intersect(rect: Rect) {
     this.bottomLeft.setXY(
       Math.max(this.bottomLeft.x, rect.bottomLeft.x),
-      Math.max(this.bottomLeft.y, rect.bottomLeft.y)
+      Math.max(this.bottomLeft.y, rect.bottomLeft.y),
     );
     this.topRight.setXY(
       Math.min(this.topRight.x, rect.topRight.x),
-      Math.min(this.topRight.y, rect.topRight.y)
+      Math.min(this.topRight.y, rect.topRight.y),
     );
     return this;
   }

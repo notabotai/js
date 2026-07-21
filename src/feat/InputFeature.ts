@@ -1,4 +1,4 @@
-import { FeatureApp, Feature } from "../Feature.ts";
+import { Feature, FeatureApp } from "../Feature.ts";
 import { Point } from "../geom/Point.ts";
 import { CanvasFeature } from "./CanvasFeature.ts";
 
@@ -70,12 +70,14 @@ export class InputFeature extends Feature {
       }
     });
     self.addEventListener("mousedown", (e) => this.onPointerDown(e, e));
-    self.addEventListener("touchstart", (e) =>
-      this.onPointerDown(e.touches[0]!, e)
+    self.addEventListener(
+      "touchstart",
+      (e) => this.onPointerDown(e.touches[0]!, e),
     );
     self.addEventListener("mousemove", (e) => this.onPointerMove(e, e));
-    self.addEventListener("touchmove", (e) =>
-      this.onPointerMove(e.touches[0]!, e)
+    self.addEventListener(
+      "touchmove",
+      (e) => this.onPointerMove(e.touches[0]!, e),
     );
     self.addEventListener("mouseup", (e) => this.onPointerUp(e));
     self.addEventListener("touchend", (e) => this.onPointerUp(e));
@@ -84,7 +86,10 @@ export class InputFeature extends Feature {
   override update() {
     if (this._pointerDown || this._pointerMove || this._pointerUp) {
       // Convert the pointer position from screen coordinates to canvas coordinates
-      this.canvas.setCanvasPointerFromScreenCoords(this.pointer, this.pointerScreen);
+      this.canvas.setCanvasPointerFromScreenCoords(
+        this.pointer,
+        this.pointerScreen,
+      );
     }
   }
 

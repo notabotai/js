@@ -11,21 +11,22 @@ type AnimBase = {
   progress: number;
   range?: NumRange;
 };
-export type Anim = AnimBase &
-  (
+export type Anim =
+  & AnimBase
+  & (
     | {
-        type: "byTime";
-        duration: number;
-        startTime: number;
-        randomDelay: number;
-        delay: number;
-        easing: EasingFn;
-      }
+      type: "byTime";
+      duration: number;
+      startTime: number;
+      randomDelay: number;
+      delay: number;
+      easing: EasingFn;
+    }
     | {
-        type: "bySpeed";
-        speed: number;
-        reachingThreshold: number;
-      }
+      type: "bySpeed";
+      speed: number;
+      reachingThreshold: number;
+    }
   );
 
 type AnimOpts = {
@@ -79,7 +80,8 @@ export class AnimateFeature extends Feature {
         } else {
           anim.progress = Math.min(timeElapsed / duration, 1);
           const easingFn = easing || Easing.linear;
-          anim.currentValue = startValue + (endValue - startValue) * easingFn(anim.progress);
+          anim.currentValue = startValue +
+            (endValue - startValue) * easingFn(anim.progress);
         }
       } else if (anim.type === "bySpeed") {
         const { currentValue, endValue, speed } = anim;
@@ -96,8 +98,9 @@ export class AnimateFeature extends Feature {
   byTime(obj: any, property: string, opts?: AnimOpts) {
     const app = this.app;
     opts = opts || {};
-    opts.duration =
-      opts.duration === undefined ? this.animationDuration : opts.duration;
+    opts.duration = opts.duration === undefined
+      ? this.animationDuration
+      : opts.duration;
     opts.easing = opts.easing || Easing.easeOut;
     opts.randomDelay = opts.randomDelay || 0;
     opts.delay = opts.delay || 0;
@@ -136,10 +139,9 @@ export class AnimateFeature extends Feature {
         }
         animation.startValue = animation.currentValue;
         animation.endValue = value;
-        animation.delay =
-          animation.randomDelay === 0
-            ? animation.delay
-            : Math.random() * animation.randomDelay;
+        animation.delay = animation.randomDelay === 0
+          ? animation.delay
+          : Math.random() * animation.randomDelay;
         animation.startTime = app.time + animation.delay;
         animation.progress = 0;
       },
@@ -184,7 +186,7 @@ export class AnimateFeature extends Feature {
   // deno-lint-ignore no-explicit-any
   getAnimationIndex(obj: any, property: string) {
     return this.animations.findIndex(
-      (anim: Anim) => anim.obj === obj && anim.property === property
+      (anim: Anim) => anim.obj === obj && anim.property === property,
     );
   }
 

@@ -23,7 +23,7 @@ export class Line {
   midpoint() {
     return new Point(
       (this.from.x + this.to.x) / 2,
-      (this.from.y + this.to.y) / 2
+      (this.from.y + this.to.y) / 2,
     );
   }
 
@@ -110,7 +110,7 @@ export class Line {
     return new Equation(
       (this.to.y - this.from.y) / determinant,
       (this.from.x - this.to.x) / determinant,
-      1
+      1,
     );
   }
 

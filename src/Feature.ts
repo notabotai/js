@@ -13,7 +13,7 @@ export interface FeatureApp {
   features: Feature[];
   debug: Debug;
   settings: Settings;
-};
+}
 
 export abstract class Feature {
   name: string;
@@ -32,4 +32,3 @@ export abstract class Feature {
   update(): void {}
   reset(): void {}
 }
-

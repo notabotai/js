@@ -1,5 +1,20 @@
 {
   "tasks": {
     "dev": "deno run --allow-net --allow-env=DENO_DEPLOYMENT_ID,PORT --allow-read --allow-write --allow-run --unstable --watch server.ts"
+  },
+  "fmt": {
+    "exclude": [
+      "src/vendor/",
+      "vendor/",
+      "node_modules/",
+      "dist/",
+      "build/",
+      "coverage/",
+      "**/*.min.js",
+      "**/*.min.mjs",
+      "**/*.min.css",
+      "**/output.css",
+      "**/*.svg"
+    ]
   }
 }

@@ -28,7 +28,7 @@ export class Point {
   }
 
   static fromPolar(angle: number, len = 1) {
-    return new Point(len * Math.cos(angle), len * Math.sin(angle))
+    return new Point(len * Math.cos(angle), len * Math.sin(angle));
   }
 
   static zero() {

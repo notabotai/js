@@ -9,7 +9,7 @@ export class Arc extends Circle {
     center: Point,
     radius: number,
     startAngle = 0,
-    endAngle = 2 * Math.PI
+    endAngle = 2 * Math.PI,
   ) {
     super(center, radius);
     this.startAngle = startAngle;

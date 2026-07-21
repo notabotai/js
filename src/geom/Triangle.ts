@@ -30,7 +30,7 @@ export class Triangle {
     return new Triangle(
       new Point(0, 0),
       new Point(side, 0),
-      new Point(side / 2, height)
+      new Point(side / 2, height),
     ).translateXY(-side / 2, -height / 3);
   }
 
@@ -38,7 +38,7 @@ export class Triangle {
     return new Triangle(
       new Point(0, 0),
       new Point(side, 0),
-      new Point(0, side)
+      new Point(0, side),
     );
   }
 
@@ -71,7 +71,7 @@ export class Triangle {
   get centroid() {
     return new Point(
       (this.a.x + this.b.x + this.c.x) / 3,
-      (this.a.y + this.b.y + this.c.y) / 3
+      (this.a.y + this.b.y + this.c.y) / 3,
     );
   }
 

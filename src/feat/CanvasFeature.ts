@@ -1,4 +1,4 @@
-import { FeatureApp, Feature } from "../Feature.ts";
+import { Feature, FeatureApp } from "../Feature.ts";
 import { Point } from "../geom/Point.ts";
 import { Circle } from "../geom/Circle.ts";
 import { Arc } from "../geom/Arc.ts";
@@ -6,8 +6,11 @@ import { Line } from "../geom/Line.ts";
 import { Ray } from "../geom/Ray.ts";
 import { Rect } from "../geom/Rect.ts";
 import { Triangle } from "../geom/Triangle.ts";
-import { PaletteFeature, PaletteColor } from "./PaletteFeature.ts";
-import { MockHTMLCanvasElement, MockCanvasRenderingContext2D } from "../mocks/MockHTML.ts";
+import { PaletteColor, PaletteFeature } from "./PaletteFeature.ts";
+import {
+  MockCanvasRenderingContext2D,
+  MockHTMLCanvasElement,
+} from "../mocks/MockHTML.ts";
 
 interface CanvasCircleOpts {
   color: PaletteColor;
@@ -101,8 +104,7 @@ export class CanvasFeature extends Feature {
     super(app, name);
     this.palette = palette;
     if (typeof document !== "undefined") {
-      this.el =
-        document.querySelector<HTMLCanvasElement>("#canvas-el") ||
+      this.el = document.querySelector<HTMLCanvasElement>("#canvas-el") ||
         document.createElement("canvas");
     } else {
       this.el = new MockHTMLCanvasElement();
@@ -134,8 +136,8 @@ export class CanvasFeature extends Feature {
       debugger;
     }
     this.clear();
-    this.scaleCancelRatio =
-      (window.devicePixelRatio * this.defaultScale) / this.scale;
+    this.scaleCancelRatio = (window.devicePixelRatio * this.defaultScale) /
+      this.scale;
   }
 
   clear() {
@@ -187,7 +189,7 @@ export class CanvasFeature extends Feature {
       0,
       -this.scale,
       this.width / 2,
-      this.height / 2
+      this.height / 2,
     );
   }
 
@@ -198,7 +200,7 @@ export class CanvasFeature extends Feature {
       0,
       this.scale,
       this.width / 2,
-      this.height / 2
+      this.height / 2,
     );
   }
 
@@ -209,7 +211,7 @@ export class CanvasFeature extends Feature {
     const scale = this.scale * this.unitScale;
     point.setXY(
       (dpr * (screenPoint.x - rect.left - this.width / dpr / 2)) / scale,
-      (dpr * -(screenPoint.y - rect.top - this.height / dpr / 2)) / scale
+      (dpr * -(screenPoint.y - rect.top - this.height / dpr / 2)) / scale,
     );
   }
 
@@ -228,7 +230,7 @@ export class CanvasFeature extends Feature {
   // Draw methods
   drawCircle(
     circle: Circle,
-    { color = "black", fixedRadius = false }: Partial<CanvasCircleOpts> = {}
+    { color = "black", fixedRadius = false }: Partial<CanvasCircleOpts> = {},
   ) {
     this.ctx.beginPath();
     const radius = circle.radius * this.scaleFor(fixedRadius);
@@ -237,7 +239,7 @@ export class CanvasFeature extends Feature {
       circle.center.y * this.unitScale,
       radius * this.unitScale,
       0,
-      2 * Math.PI
+      2 * Math.PI,
     );
     this.ctx.fillStyle = this.palette.colors[color];
     this.ctx.fill();
@@ -250,18 +252,18 @@ export class CanvasFeature extends Feature {
       lineWidth = 0.1,
       fixedLineWidth = false,
       fixedRadius = false,
-    }: Partial<CanvasArcOpts> = {}
+    }: Partial<CanvasArcOpts> = {},
   ) {
     this.ctx.beginPath();
-    this.ctx.lineWidth =
-      lineWidth * this.unitScale * this.scaleFor(fixedLineWidth);
+    this.ctx.lineWidth = lineWidth * this.unitScale *
+      this.scaleFor(fixedLineWidth);
     const radius = arc.radius * this.scaleFor(fixedRadius);
     this.ctx.arc(
       arc.center.x * this.unitScale,
       arc.center.y * this.unitScale,
       radius * this.unitScale,
       arc.startAngle,
-      arc.endAngle
+      arc.endAngle,
     );
     this.ctx.strokeStyle = this.palette.colors[color];
     this.ctx.stroke();
@@ -273,7 +275,7 @@ export class CanvasFeature extends Feature {
       radius = 0.5,
       color = "black",
       fixedRadius = false,
-    }: Partial<CanvasPointOpts> = {}
+    }: Partial<CanvasPointOpts> = {},
   ) {
     this.ctx.beginPath();
     const r = radius * this.scaleFor(fixedRadius);
@@ -288,7 +290,7 @@ export class CanvasFeature extends Feature {
       radius = 0.5,
       color = "black",
       fixedRadius = false,
-    }: Partial<CanvasPointOpts> = {}
+    }: Partial<CanvasPointOpts> = {},
   ) {
     const r = radius * this.scaleFor(fixedRadius);
     this.ctx.beginPath();
@@ -314,7 +316,7 @@ export class CanvasFeature extends Feature {
       align = "center",
       baseline = "middle", // alphabetic, top, hanging, middle, ideographic, bottom
       fixedSize = false,
-    }: Partial<CanvasTextOpts> = {}
+    }: Partial<CanvasTextOpts> = {},
   ) {
     this.ctx.textAlign = align;
     this.ctx.textBaseline = baseline;
@@ -335,15 +337,15 @@ export class CanvasFeature extends Feature {
       arrowColor = color,
       rounded = false,
       fixedLineWidth = false,
-    }: Partial<CanvasLineOpts> = {}
+    }: Partial<CanvasLineOpts> = {},
   ) {
     this.ctx.beginPath();
-    const arrowWidth =
-      arrowSize * this.unitScale * this.scaleFor(fixedLineWidth);
+    const arrowWidth = arrowSize * this.unitScale *
+      this.scaleFor(fixedLineWidth);
     const l = line.clone().scale(this.unitScale);
     const angle = l.angle();
-    this.ctx.lineWidth =
-      lineWidth * this.unitScale * this.scaleFor(fixedLineWidth);
+    this.ctx.lineWidth = lineWidth * this.unitScale *
+      this.scaleFor(fixedLineWidth);
     this.ctx.lineCap = rounded ? "round" : "butt";
     this.ctx.moveTo(l.from.x, l.from.y);
     this.ctx.lineTo(l.to.x, l.to.y);
@@ -355,23 +357,23 @@ export class CanvasFeature extends Feature {
     if (arrowStart) {
       this.ctx.moveTo(
         l.from.x + arrowWidth * Math.cos(angle + Math.PI / 4),
-        l.from.y + arrowWidth * Math.sin(angle + Math.PI / 4)
+        l.from.y + arrowWidth * Math.sin(angle + Math.PI / 4),
       );
       this.ctx.lineTo(l.from.x, l.from.y);
       this.ctx.lineTo(
         l.from.x + arrowWidth * Math.cos(angle - Math.PI / 4),
-        l.from.y + arrowWidth * Math.sin(angle - Math.PI / 4)
+        l.from.y + arrowWidth * Math.sin(angle - Math.PI / 4),
       );
     }
     if (arrowEnd) {
       this.ctx.moveTo(
         l.to.x + arrowWidth * Math.cos(angle + (Math.PI * 3) / 4),
-        l.to.y + arrowWidth * Math.sin(angle + (Math.PI * 3) / 4)
+        l.to.y + arrowWidth * Math.sin(angle + (Math.PI * 3) / 4),
       );
       this.ctx.lineTo(l.to.x, l.to.y);
       this.ctx.lineTo(
         l.to.x + arrowWidth * Math.cos(angle - (Math.PI * 3) / 4),
-        l.to.y + arrowWidth * Math.sin(angle - (Math.PI * 3) / 4)
+        l.to.y + arrowWidth * Math.sin(angle - (Math.PI * 3) / 4),
       );
     }
     this.ctx.strokeStyle = this.palette.colors[arrowColor];
@@ -389,7 +391,7 @@ export class CanvasFeature extends Feature {
       length = 0.8,
       fixedLineWidth = false,
       rounded = false,
-    }: Partial<CanvasRayOpts> = {}
+    }: Partial<CanvasRayOpts> = {},
   ) {
     this.drawLine(Line.fromRay(ray, length), {
       lineWidth,
@@ -412,11 +414,11 @@ export class CanvasFeature extends Feature {
       fillColor = color,
       cornerRadius = 0,
       dashed = false,
-    }: Partial<CanvasRectOpts> = {}
+    }: Partial<CanvasRectOpts> = {},
   ) {
     this.ctx.beginPath();
-    this.ctx.lineWidth =
-      lineWidth * this.unitScale * this.scaleFor(fixedLineWidth);
+    this.ctx.lineWidth = lineWidth * this.unitScale *
+      this.scaleFor(fixedLineWidth);
     const { left, top, right, bottom, width, height } = rect
       .clone()
       .scale(this.unitScale);
@@ -455,20 +457,20 @@ export class CanvasFeature extends Feature {
 
   drawTriangle(
     triangle: Triangle,
-    { color = "black" }: Partial<CanvasTriangleOpts> = {}
+    { color = "black" }: Partial<CanvasTriangleOpts> = {},
   ) {
     this.ctx.beginPath();
     this.ctx.moveTo(
       triangle.a.x * this.unitScale,
-      triangle.a.y * this.unitScale
+      triangle.a.y * this.unitScale,
     );
     this.ctx.lineTo(
       triangle.b.x * this.unitScale,
-      triangle.b.y * this.unitScale
+      triangle.b.y * this.unitScale,
     );
     this.ctx.lineTo(
       triangle.c.x * this.unitScale,
-      triangle.c.y * this.unitScale
+      triangle.c.y * this.unitScale,
     );
     this.ctx.closePath();
     this.ctx.fillStyle = this.palette.colors[color];
@@ -477,11 +479,11 @@ export class CanvasFeature extends Feature {
 
   drawGrid(
     bounds: Rect,
-    { lineWidth = 0.02, fixedLineWidth = false }: Partial<CanvasGridOpts> = {}
+    { lineWidth = 0.02, fixedLineWidth = false }: Partial<CanvasGridOpts> = {},
   ) {
     this.ctx.strokeStyle = this.palette.colors.divider;
-    this.ctx.lineWidth =
-      lineWidth * this.unitScale * this.scaleFor(fixedLineWidth);
+    this.ctx.lineWidth = lineWidth * this.unitScale *
+      this.scaleFor(fixedLineWidth);
     this.ctx.beginPath();
     const { left, right, top, bottom } = bounds.clone().scale(this.unitScale);
     for (let x = left + this.unitScale; x < right; x += this.unitScale) {

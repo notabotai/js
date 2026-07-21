@@ -1,4 +1,4 @@
-import { FeatureApp, Feature } from "../Feature.ts";
+import { Feature, FeatureApp } from "../Feature.ts";
 
 /* reloadOnChange
  *

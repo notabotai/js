@@ -80,13 +80,13 @@ export class Debug {
     this.loggedValues[`${featureName}: ${key}`] = this.getDebugText(
       featureName,
       key,
-      values
+      values,
     );
   }
 
   selectiveStringify(
     value: DebugValue,
-    stringifier: Stringifier
+    stringifier: Stringifier,
   ): string | undefined {
     if (typeof value === "number") {
       return value.toFixed(2);
@@ -105,7 +105,7 @@ export class Debug {
     featureName: string,
     key: string,
     values: DebugValue[],
-    stringifier: Stringifier = () => undefined
+    stringifier: Stringifier = () => undefined,
   ) {
     if (values.length === 0) {
       return `${featureName}: ${key}`;

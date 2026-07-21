@@ -1,5 +1,8 @@
-import { isProd, routes, HttpResponse } from "./serveHttpRequests.ts";
-import { clearLocalhostModuleCache, CacheReloadOpts } from "./clearLocalhostModuleCache.ts";
+import { HttpResponse, isProd, routes } from "./serveHttpRequests.ts";
+import {
+  CacheReloadOpts,
+  clearLocalhostModuleCache,
+} from "./clearLocalhostModuleCache.ts";
 import { run } from "./run.ts";
 
 export const openConnections: ReadableStreamDefaultController[] = [];
@@ -9,7 +12,7 @@ type WatchDevDirsOpts = {
   bundle: [string, string] | false;
   testDir: string | false;
   cacheReload: CacheReloadOpts;
-}
+};
 type OnFileChangeOpts = WatchDevDirsOpts & {
   path: string;
   time: Date;
@@ -94,8 +97,10 @@ async function onFileChange({
   if (await run("check", path)) return;
 
   // run tests
-  if (path.endsWith(".test.ts") &&
-      await run("test", "--unstable", path)) return;
+  if (
+    path.endsWith(".test.ts") &&
+    await run("test", "--unstable", path)
+  ) return;
 
   // bundle
   if (bundle && await run("bundle", bundle[0], bundle[1])) return;
@@ -103,8 +108,7 @@ async function onFileChange({
   // notify open browser connections
   openConnections.forEach((connection) => {
     connection.enqueue(
-      new TextEncoder().encode(`data: ${time.getTime()}\r\n\r\n`)
+      new TextEncoder().encode(`data: ${time.getTime()}\r\n\r\n`),
     );
   });
 }
-
